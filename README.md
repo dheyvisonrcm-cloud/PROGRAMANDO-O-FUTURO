@@ -1,0 +1,1 @@
+Central de código, documentos, pesquisas e dados da Equipe 1 durante o período de incubação no programa Progamando o Futuro. Este repositório reúne materiais de estudo, experimentos e resultados para apoiar o desenvolvimento e a consolidação das iniciativas da equipe.
