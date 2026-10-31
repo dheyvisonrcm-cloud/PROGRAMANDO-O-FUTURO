@@ -1,4 +1,6 @@
 -- Consulta para ver o perfil completo do usuário e suas conquistas
+USE programando_futuro;
+
 SELECT 
     u.nome AS Usuario,
     u.pontos_totais AS Pontos_Acumulados,
