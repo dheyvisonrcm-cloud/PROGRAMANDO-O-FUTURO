@@ -1,0 +1,27 @@
+# 1. Arquivos de Configuração e Senhas (EXTREMAMENTE IMPORTANTE)
+.env
+.env.*
+*.env
+
+# 2. Ambientes Virtuais do Python
+venv/
+env/
+ENV/
+.venv/
+
+# 3. Cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# 4. Arquivos Temporários de IDEs e Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# 5. Arquivos Gerados Localmente (Geração de QR Codes / Imagens de Teste)
+backend/static/qrcodes/*
+!backend/static/qrcodes/.gitkeep
