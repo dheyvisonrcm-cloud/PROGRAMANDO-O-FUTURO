@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import get_db
 
-# Criação da aplicação FastAPI
+# aplicação FastAPI
 app = FastAPI(
     title="Programando o Futuro - API Tourism",
     description="API do MVP de Turismo Gamificado",
@@ -19,7 +19,7 @@ def home():
 @app.get("/testar-banco")
 def testar_banco(db: Session = Depends(get_db)):
     try:
-        # Executa uma consulta simples no teu MySQL para contar monumentos
+        # Executa uma consulta simples  MySQL para contar monumentos
         result = db.execute(text("SELECT COUNT(*) FROM monumentos")).fetchone()
         return {
             "status": "Conexão com o MySQL bem-sucedida!",

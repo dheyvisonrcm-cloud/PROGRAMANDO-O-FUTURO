@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 
-# Carrega as variáveis definidas no arquivo .env
+
 load_dotenv()
 
 # Recupera as credenciais do ambiente
