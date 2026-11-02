@@ -17,7 +17,7 @@ DB_NAME = os.getenv("DB_NAME", "programando_futuro")
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # Cria o motor de conexão do SQLAlchemy com o MySQL
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL, echo=False)
 
 # Cria a fábrica de sessões para executar consultas SQL
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
