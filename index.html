@@ -11,7 +11,6 @@
 <body class="bg-gray-900 text-white min-h-screen font-sans pb-10">
 
     <script>
-        // URL Oficial da sua API no Render
         const API_BASE_URL = "https://programando-o-futuro-6zpg.onrender.com";
     </script>
 
@@ -30,39 +29,41 @@
 
         <!-- SEÇÃO DE AUTENTICAÇÃO -->
         <section id="authSection" class="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700">
-            <div class="flex border-b border-gray-700 mb-4">
-                <button id="tabLogin" type="button" onclick="switchTab('login')" class="flex-1 py-2 font-semibold text-blue-400 border-b-2 border-blue-400">Login</button>
-                <button id="tabRegister" type="button" onclick="switchTab('register')" class="flex-1 py-2 font-semibold text-gray-400">Cadastrar</button>
+            
+            <!-- Botões de Alternância (Fora dos formulários) -->
+            <div class="flex border-b border-gray-700 mb-6">
+                <button type="button" id="tabLoginBtn" onclick="switchTab('login')" class="flex-1 py-3 text-center font-bold text-blue-400 border-b-2 border-blue-400 cursor-pointer">Login</button>
+                <button type="button" id="tabRegisterBtn" onclick="switchTab('register')" class="flex-1 py-3 text-center font-bold text-gray-400 border-b-2 border-transparent cursor-pointer">Cadastrar</button>
             </div>
 
-            <!-- Formulário Cadastro -->
+            <!-- Formulário de Cadastro (Inicia Escondido) -->
             <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
                 <div>
-                    <label class="text-xs text-gray-400">Nome Completo</label>
-                    <input type="text" id="regNome" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+                    <label class="text-xs text-gray-400 block mb-1">Nome Completo</label>
+                    <input type="text" id="regNome" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="text-xs text-gray-400">E-mail</label>
-                    <input type="email" id="regEmail" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+                    <label class="text-xs text-gray-400 block mb-1">E-mail</label>
+                    <input type="email" id="regEmail" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="text-xs text-gray-400">Senha</label>
-                    <input type="password" id="regSenha" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+                    <label class="text-xs text-gray-400 block mb-1">Senha</label>
+                    <input type="password" id="regSenha" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
-                <button type="submit" id="btnRegister" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition">Criar Conta</button>
+                <button type="submit" id="btnRegister" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition cursor-pointer">Criar Conta</button>
             </form>
 
-            <!-- Formulário Login -->
+            <!-- Formulário de Login (Inicia Visível) -->
             <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
-                    <label class="text-xs text-gray-400">E-mail</label>
-                    <input type="email" id="loginEmail" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+                    <label class="text-xs text-gray-400 block mb-1">E-mail</label>
+                    <input type="email" id="loginEmail" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="text-xs text-gray-400">Senha</label>
-                    <input type="password" id="loginSenha" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+                    <label class="text-xs text-gray-400 block mb-1">Senha</label>
+                    <input type="password" id="loginSenha" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
-                <button type="submit" id="btnLogin" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition">Entrar</button>
+                <button type="submit" id="btnLogin" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition cursor-pointer">Entrar</button>
             </form>
         </section>
 
@@ -134,180 +135,17 @@
         let currentUserId = null;
         let html5QrcodeScanner = null;
 
-        function switchTab(tab) {
+        // Alternar abas sem intervir com o evento de envio do formulário
+        function switchTab(target) {
             const regForm = document.getElementById('registerForm');
             const loginForm = document.getElementById('loginForm');
-            const tabReg = document.getElementById('tabRegister');
-            const tabLog = document.getElementById('tabLogin');
+            const tabReg = document.getElementById('tabRegisterBtn');
+            const tabLog = document.getElementById('tabLoginBtn');
 
-            if (tab === 'register') {
+            if (target === 'register') {
                 regForm.classList.remove('hidden');
                 loginForm.classList.add('hidden');
-                tabReg.className = "flex-1 py-2 font-semibold text-blue-400 border-b-2 border-blue-400";
-                tabLog.className = "flex-1 py-2 font-semibold text-gray-400 border-b-0";
-            } else {
-                loginForm.classList.remove('hidden');
-                regForm.classList.add('hidden');
-                tabLog.className = "flex-1 py-2 font-semibold text-blue-400 border-b-2 border-blue-400";
-                tabReg.className = "flex-1 py-2 font-semibold text-gray-400 border-b-0";
-            }
-        }
-
-        function showAlert(msg, isSuccess = true) {
-            const alert = document.getElementById('alertBox');
-            alert.innerText = msg;
-            alert.className = `p-4 rounded-xl text-sm font-medium ${isSuccess ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'}`;
-            alert.classList.remove('hidden');
-            setTimeout(() => alert.classList.add('hidden'), 5000);
-        }
-
-        async function handleRegister(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btnRegister');
-            btn.disabled = true;
-            btn.innerText = "Aguarde (Conectando API)...";
-
-            const nome = document.getElementById('regNome').value;
-            const email = document.getElementById('regEmail').value;
-            const senha = document.getElementById('regSenha').value;
-
-            try {
-                const res = await fetch(`${API_BASE_URL}/cadastrar`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nome, email, senha })
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.detail || 'Erro ao efetuar cadastro');
-
-                showAlert('✅ Cadastro realizado com sucesso! Faça login para prosseguir.');
-                switchTab('login');
-                document.getElementById('loginEmail').value = email;
-            } catch (err) {
-                showAlert(`❌ ${err.message}`, false);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Criar Conta";
-            }
-        }
-
-        async function handleLogin(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btnLogin');
-            btn.disabled = true;
-            btn.innerText = "Conectando...";
-
-            const email = document.getElementById('loginEmail').value;
-            const senha = document.getElementById('loginSenha').value;
-
-            try {
-                const res = await fetch(`${API_BASE_URL}/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, senha })
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.detail || 'Falha no login');
-
-                currentUserId = data.usuario.id_usuario;
-                document.getElementById('authSection').classList.add('hidden');
-                document.getElementById('userDashboard').classList.remove('hidden');
-
-                showAlert(`🎉 Bem-vindo(a), ${data.usuario.nome}!`);
-                loadProfile();
-            } catch (err) {
-                showAlert(`❌ ${err.message}`, false);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Entrar";
-            }
-        }
-
-        async function loadProfile() {
-            if (!currentUserId) return;
-
-            try {
-                const res = await fetch(`${API_BASE_URL}/usuarios/${currentUserId}/meu-perfil`);
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.detail || 'Erro ao carregar perfil');
-
-                document.getElementById('userName').innerText = data.nome;
-                document.getElementById('userEmail').innerText = data.email;
-                document.getElementById('userPoints').innerText = data.pontos_totais;
-
-                const container = document.getElementById('brindesList');
-                if (data.brindes && data.brindes.length > 0) {
-                    container.innerHTML = data.brindes.map(b => `
-                        <div class="bg-gray-700/50 p-3 rounded-lg border border-gray-600/50 flex items-center justify-between">
-                            <span class="font-medium text-sm text-emerald-300"><i class="fa-solid fa-ribbon mr-2"></i>${b.nome_brinde || b.nome || 'Brinde Digital'}</span>
-                            <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded">Desbloqueado</span>
-                        </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">Nenhum brinde resgatado ainda.</p>`;
-                }
-            } catch (err) {
-                showAlert(err.message, false);
-            }
-        }
-
-        async function resgatarQRCode(qrcode_hash) {
-            if (!qrcode_hash) return showAlert('Informe o código QR Code', false);
-            if (!currentUserId) return showAlert('Usuário não autenticado', false);
-
-            try {
-                const res = await fetch(`${API_BASE_URL}/conquistas/resgatar`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id_usuario: parseInt(currentUserId),
-                        qrcode_hash: qrcode_hash.trim()
-                    })
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.detail || 'Erro ao resgatar');
-
-                showAlert(`🎉 ${data.mensagem} +${data.pontos_ganhos} pts!`);
-                document.getElementById('manualHash').value = '';
-                loadProfile();
-            } catch (err) {
-                showAlert(err.message, false);
-            }
-        }
-
-        function startScanner() {
-            stopScanner();
-            html5QrcodeScanner = new Html5Qrcode("reader");
-            html5QrcodeScanner.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 200, height: 200 } },
-                (decodedText) => {
-                    stopScanner();
-                    resgatarQRCode(decodedText);
-                },
-                (errorMessage) => {}
-            ).catch(err => {
-                showAlert("Erro ao abrir câmera: " + err, false);
-            });
-        }
-
-        function stopScanner() {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().then(() => {
-                    html5QrcodeScanner.clear();
-                }).catch(() => {});
-            }
-        }
-
-        function logout() {
-            currentUserId = null;
-            document.getElementById('authSection').classList.remove('hidden');
-            document.getElementById('userDashboard').classList.add('hidden');
-            stopScanner();
-        }
-    </script>
+                
+                tabReg.className = "flex-1 py-3 text
 </body>
 </html>
