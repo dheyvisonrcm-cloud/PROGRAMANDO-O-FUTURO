@@ -4,77 +4,310 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Programando o Futuro - Turismo Gamificado</title>
-    <!-- Tailwind CSS CDN para estilização mobile moderna -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- HTML5-QRCode scanner -->
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="bg-gray-900 text-white min-h-screen font-sans pb-10">
 
-    <!-- Configuração da URL da API (Render em Produção) -->
     <script>
+        // URL Oficial da sua API no Render
         const API_BASE_URL = "https://programando-o-futuro-6zpg.onrender.com";
     </script>
 
-    <!-- Header do App -->
+    <!-- Header -->
     <header class="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-center shadow-lg sticky top-0 z-50">
         <h1 class="text-xl font-bold flex items-center justify-center gap-2">
-            <i class="fa-solid font-lg fa-location-dot text-yellow-400"></i> Programando o Futuro
+            <i class="fa-solid fa-location-dot text-yellow-400"></i> Programando o Futuro
         </h1>
         <p class="text-xs text-blue-200">Turismo Gamificado & Resgate de Brindes</p>
     </header>
 
     <main class="max-w-md mx-auto p-4 space-y-6">
 
-        <!-- ALERTA / NOTIFICAÇÃO -->
+        <!-- ALERTA DE STATUS -->
         <div id="alertBox" class="hidden p-4 rounded-xl text-sm font-medium transition-all"></div>
 
-        <!-- TELA 1: AUTENTICAÇÃO (CADASTRO / LOGIN) -->
+        <!-- SEÇÃO DE AUTENTICAÇÃO -->
         <section id="authSection" class="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700">
             <div class="flex border-b border-gray-700 mb-4">
-                <button id="tabLogin" onclick="switchTab('login')" class="flex-1 py-2 font-semibold text-blue-400 border-b-2 border-blue-400">Login</button>
-                <button id="tabRegister" onclick="switchTab('register')" class="flex-1 py-2 font-semibold text-gray-400">Cadastrar</button>
+                <button id="tabLogin" type="button" onclick="switchTab('login')" class="flex-1 py-2 font-semibold text-blue-400 border-b-2 border-blue-400">Login</button>
+                <button id="tabRegister" type="button" onclick="switchTab('register')" class="flex-1 py-2 font-semibold text-gray-400">Cadastrar</button>
             </div>
 
-            <!-- Form Cadastro -->
+            <!-- Formulário Cadastro -->
             <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
                 <div>
                     <label class="text-xs text-gray-400">Nome Completo</label>
-                    <input type="text" id="regNome" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+                    <input type="text" id="regNome" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
                 <div>
                     <label class="text-xs text-gray-400">E-mail</label>
-                    <input type="email" id="regEmail" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+                    <input type="email" id="regEmail" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
                 <div>
                     <label class="text-xs text-gray-400">Senha</label>
-                    <input type="password" id="regSenha" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+                    <input type="password" id="regSenha" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition">Criar Conta</button>
+                <button type="submit" id="btnRegister" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition">Criar Conta</button>
             </form>
 
-            <!-- Form Login -->
+            <!-- Formulário Login -->
             <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                     <label class="text-xs text-gray-400">E-mail</label>
-                    <input type="email" id="loginEmail" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+                    <input type="email" id="loginEmail" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
                 <div>
                     <label class="text-xs text-gray-400">Senha</label>
-                    <input type="password" id="loginSenha" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+                    <input type="password" id="loginSenha" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition">Entrar</button>
+                <button type="submit" id="btnLogin" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition">Entrar</button>
             </form>
         </section>
 
-        <!-- TELA 2: PAINEL DO USUÁRIO & PERFIL -->
+        <!-- DASHBOARD DO USUÁRIO -->
         <section id="userDashboard" class="hidden space-y-6">
-            
-            <!-- Perfil Card -->
-            <div class="bg-gradient-to-br from-gray-800 to-gray-850 p-6 rounded-2xl border border-gray-700 shadow-xl relative overflow-hidden">
+            <div class="bg-gradient-to-br from-gray-800 to-gray-850 p-6 rounded-2xl border border-gray-700 shadow-xl relative">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h2 id="userName" class="text-xl font-bold">---</h2>
-                        <p id="userEmail" class="
+                        <h2 id="userName" class="text-xl font-bold text-white">---</h2>
+                        <p id="userEmail" class="text-xs text-gray-400">---</p>
+                    </div>
+                    <button onclick="logout()" class="text-xs bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30">Sair</button>
+                </div>
+                
+                <div class="mt-6 flex items-center justify-between bg-gray-900/60 p-4 rounded-xl border border-gray-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-yellow-500/20 text-yellow-400 rounded-lg">
+                            <i class="fa-solid fa-trophy text-2xl"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-400 uppercase tracking-wider block">Pontuação</span>
+                            <span id="userPoints" class="text-2xl font-black text-yellow-400">0</span>
+                        </div>
+                    </div>
+                    <button onclick="loadProfile()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+            </div>
+
+            <!-- Scanner QR Code -->
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl space-y-4">
+                <h3 class="font-bold flex items-center gap-2 text-indigo-400">
+                    <i class="fa-solid fa-qrcode"></i> Resgatar Recompensa
+                </h3>
+
+                <div id="reader" class="overflow-hidden rounded-xl bg-gray-900 border border-gray-700"></div>
+
+                <div class="flex gap-2">
+                    <button onclick="startScanner()" class="flex-1 bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-600/30">
+                        <i class="fa-solid fa-camera mr-1"></i> Abrir Câmera
+                    </button>
+                    <button onclick="stopScanner()" class="bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-semibold">Parar</button>
+                </div>
+
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-gray-700"></div>
+                    <span class="flex-shrink mx-4 text-xs text-gray-500">ou digite o código</span>
+                    <div class="flex-grow border-t border-gray-700"></div>
+                </div>
+
+                <div class="flex gap-2">
+                    <input type="text" id="manualHash" placeholder="Ex: REC_MZ_2026" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white">
+                    <button onclick="resgatarQRCode(document.getElementById('manualHash').value)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold">Resgatar</button>
+                </div>
+            </div>
+
+            <!-- Inventário de Brindes -->
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl space-y-4">
+                <h3 class="font-bold flex items-center gap-2 text-emerald-400">
+                    <i class="fa-solid fa-gift"></i> Inventário de Brindes
+                </h3>
+                <div id="brindesList" class="grid grid-cols-1 gap-3">
+                    <p class="text-xs text-gray-500 text-center py-4">Nenhum brinde resgatado ainda.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let currentUserId = null;
+        let html5QrcodeScanner = null;
+
+        function switchTab(tab) {
+            const regForm = document.getElementById('registerForm');
+            const loginForm = document.getElementById('loginForm');
+            const tabReg = document.getElementById('tabRegister');
+            const tabLog = document.getElementById('tabLogin');
+
+            if (tab === 'register') {
+                regForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+                tabReg.className = "flex-1 py-2 font-semibold text-blue-400 border-b-2 border-blue-400";
+                tabLog.className = "flex-1 py-2 font-semibold text-gray-400 border-b-0";
+            } else {
+                loginForm.classList.remove('hidden');
+                regForm.classList.add('hidden');
+                tabLog.className = "flex-1 py-2 font-semibold text-blue-400 border-b-2 border-blue-400";
+                tabReg.className = "flex-1 py-2 font-semibold text-gray-400 border-b-0";
+            }
+        }
+
+        function showAlert(msg, isSuccess = true) {
+            const alert = document.getElementById('alertBox');
+            alert.innerText = msg;
+            alert.className = `p-4 rounded-xl text-sm font-medium ${isSuccess ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'}`;
+            alert.classList.remove('hidden');
+            setTimeout(() => alert.classList.add('hidden'), 5000);
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnRegister');
+            btn.disabled = true;
+            btn.innerText = "Aguarde (Conectando API)...";
+
+            const nome = document.getElementById('regNome').value;
+            const email = document.getElementById('regEmail').value;
+            const senha = document.getElementById('regSenha').value;
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/cadastrar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, email, senha })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Erro ao efetuar cadastro');
+
+                showAlert('✅ Cadastro realizado com sucesso! Faça login para prosseguir.');
+                switchTab('login');
+                document.getElementById('loginEmail').value = email;
+            } catch (err) {
+                showAlert(`❌ ${err.message}`, false);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Criar Conta";
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnLogin');
+            btn.disabled = true;
+            btn.innerText = "Conectando...";
+
+            const email = document.getElementById('loginEmail').value;
+            const senha = document.getElementById('loginSenha').value;
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Falha no login');
+
+                currentUserId = data.usuario.id_usuario;
+                document.getElementById('authSection').classList.add('hidden');
+                document.getElementById('userDashboard').classList.remove('hidden');
+
+                showAlert(`🎉 Bem-vindo(a), ${data.usuario.nome}!`);
+                loadProfile();
+            } catch (err) {
+                showAlert(`❌ ${err.message}`, false);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Entrar";
+            }
+        }
+
+        async function loadProfile() {
+            if (!currentUserId) return;
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/usuarios/${currentUserId}/meu-perfil`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Erro ao carregar perfil');
+
+                document.getElementById('userName').innerText = data.nome;
+                document.getElementById('userEmail').innerText = data.email;
+                document.getElementById('userPoints').innerText = data.pontos_totais;
+
+                const container = document.getElementById('brindesList');
+                if (data.brindes && data.brindes.length > 0) {
+                    container.innerHTML = data.brindes.map(b => `
+                        <div class="bg-gray-700/50 p-3 rounded-lg border border-gray-600/50 flex items-center justify-between">
+                            <span class="font-medium text-sm text-emerald-300"><i class="fa-solid fa-ribbon mr-2"></i>${b.nome_brinde || b.nome || 'Brinde Digital'}</span>
+                            <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded">Desbloqueado</span>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">Nenhum brinde resgatado ainda.</p>`;
+                }
+            } catch (err) {
+                showAlert(err.message, false);
+            }
+        }
+
+        async function resgatarQRCode(qrcode_hash) {
+            if (!qrcode_hash) return showAlert('Informe o código QR Code', false);
+            if (!currentUserId) return showAlert('Usuário não autenticado', false);
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/conquistas/resgatar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_usuario: parseInt(currentUserId),
+                        qrcode_hash: qrcode_hash.trim()
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Erro ao resgatar');
+
+                showAlert(`🎉 ${data.mensagem} +${data.pontos_ganhos} pts!`);
+                document.getElementById('manualHash').value = '';
+                loadProfile();
+            } catch (err) {
+                showAlert(err.message, false);
+            }
+        }
+
+        function startScanner() {
+            stopScanner();
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 200, height: 200 } },
+                (decodedText) => {
+                    stopScanner();
+                    resgatarQRCode(decodedText);
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                showAlert("Erro ao abrir câmera: " + err, false);
+            });
+        }
+
+        function stopScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.clear();
+                }).catch(() => {});
+            }
+        }
+
+        function logout() {
+            currentUserId = null;
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('userDashboard').classList.add('hidden');
+            stopScanner();
+        }
+    </script>
+</body>
+</html>
