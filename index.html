@@ -11,7 +11,6 @@
 <body class="bg-gray-900 text-white min-h-screen font-sans pb-10">
 
     <script>
-        // URL da sua API hospedada no Render
         const API_BASE_URL = "https://programando-o-futuro-6zpg.onrender.com";
     </script>
 
@@ -26,19 +25,19 @@
     <main class="max-w-md mx-auto p-4 space-y-6">
 
         <!-- ALERTA DE STATUS -->
-        <div id="alertBox" class="hidden p-4 rounded-xl text-sm font-medium transition-all"></div>
+        <div id="alertBox" style="display: none;" class="p-4 rounded-xl text-sm font-medium transition-all"></div>
 
         <!-- SEÇÃO DE AUTENTICAÇÃO -->
         <section id="authSection" class="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700">
             
             <!-- Botões de Alternância de Abas -->
             <div class="flex border-b border-gray-700 mb-6">
-                <button type="button" id="tabLoginBtn" onclick="switchTab('login')" class="flex-1 py-3 text-center font-bold text-blue-400 border-b-2 border-blue-400 cursor-pointer">Login</button>
-                <button type="button" id="tabRegisterBtn" onclick="switchTab('register')" class="flex-1 py-3 text-center font-bold text-gray-400 border-b-2 border-transparent cursor-pointer">Cadastrar</button>
+                <button type="button" id="tabLoginBtn" onclick="mostrarAba('login')" class="flex-1 py-3 text-center font-bold text-blue-400 border-b-2 border-blue-400 cursor-pointer">Login</button>
+                <button type="button" id="tabRegisterBtn" onclick="mostrarAba('register')" class="flex-1 py-3 text-center font-bold text-gray-400 border-b-2 border-transparent cursor-pointer">Cadastrar</button>
             </div>
 
-            <!-- Formulário Cadastro (Inicia Escondido) -->
-            <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+            <!-- Formulário Cadastro (Inicia Escondido via style.display) -->
+            <form id="registerForm" onsubmit="handleRegister(event)" style="display: none;" class="space-y-4">
                 <div>
                     <label class="text-xs text-gray-400 block mb-1">Nome Completo</label>
                     <input type="text" id="regNome" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
@@ -55,7 +54,7 @@
             </form>
 
             <!-- Formulário Login (Inicia Visível) -->
-            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+            <form id="loginForm" onsubmit="handleLogin(event)" style="display: block;" class="space-y-4">
                 <div>
                     <label class="text-xs text-gray-400 block mb-1">E-mail</label>
                     <input type="email" id="loginEmail" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
@@ -69,12 +68,250 @@
         </section>
 
         <!-- DASHBOARD DO USUÁRIO -->
-        <section id="userDashboard" class="hidden space-y-6">
+        <section id="userDashboard" style="display: none;" class="space-y-6">
             <div class="bg-gradient-to-br from-gray-800 to-gray-850 p-6 rounded-2xl border border-gray-700 shadow-xl relative">
                 <div class="flex justify-between items-start">
                     <div>
                         <h2 id="userName" class="text-xl font-bold text-white">---</h2>
                         <p id="userEmail" class="text-xs text-gray-400">---</p>
                     </div>
-                    <button onclick="logout()" class="text-xs bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30 cursor-pointer">Sair</button>
+                    <button type="button" onclick="logout()" class="text-xs bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30 cursor-pointer">Sair</button>
                 </div>
+                
+                <div class="mt-6 flex items-center justify-between bg-gray-900/60 p-4 rounded-xl border border-gray-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-yellow-500/20 text-yellow-400 rounded-lg">
+                            <i class="fa-solid fa-trophy text-2xl"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-400 uppercase tracking-wider block">Pontuação</span>
+                            <span id="userPoints" class="text-2xl font-black text-yellow-400">0</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="loadProfile()" class="text-gray-400 hover:text-white cursor-pointer"><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+            </div>
+
+            <!-- Scanner QR Code -->
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl space-y-4">
+                <h3 class="font-bold flex items-center gap-2 text-indigo-400">
+                    <i class="fa-solid fa-qrcode"></i> Resgatar Recompensa
+                </h3>
+
+                <div id="reader" class="overflow-hidden rounded-xl bg-gray-900 border border-gray-700"></div>
+
+                <div class="flex gap-2">
+                    <button type="button" onclick="startScanner()" class="flex-1 bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-600/30 cursor-pointer">
+                        <i class="fa-solid fa-camera mr-1"></i> Abrir Câmera
+                    </button>
+                    <button type="button" onclick="stopScanner()" class="bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer">Parar</button>
+                </div>
+
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-gray-700"></div>
+                    <span class="flex-shrink mx-4 text-xs text-gray-500">ou digite o código</span>
+                    <div class="flex-grow border-t border-gray-700"></div>
+                </div>
+
+                <div class="flex gap-2">
+                    <input type="text" id="manualHash" placeholder="Ex: REC_MZ_2026" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                    <button type="button" onclick="resgatarQRCode(document.getElementById('manualHash').value)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold cursor-pointer">Resgatar</button>
+                </div>
+            </div>
+
+            <!-- Inventário de Brindes -->
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl space-y-4">
+                <h3 class="font-bold flex items-center gap-2 text-emerald-400">
+                    <i class="fa-solid fa-gift"></i> Inventário de Brindes
+                </h3>
+                <div id="brindesList" class="grid grid-cols-1 gap-3">
+                    <p class="text-xs text-gray-500 text-center py-4">Nenhum brinde resgatado ainda.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let currentUserId = null;
+        let html5QrcodeScanner = null;
+
+        // Função infalível utilizando manipulação de estilo nativa
+        function mostrarAba(aba) {
+            const formLogin = document.getElementById('loginForm');
+            const formReg = document.getElementById('registerForm');
+            const btnLog = document.getElementById('tabLoginBtn');
+            const btnReg = document.getElementById('tabRegisterBtn');
+
+            if (aba === 'register') {
+                formReg.style.display = 'block';
+                formLogin.style.display = 'none';
+
+                btnReg.className = "flex-1 py-3 text-center font-bold text-blue-400 border-b-2 border-blue-400 cursor-pointer";
+                btnLog.className = "flex-1 py-3 text-center font-bold text-gray-400 border-b-2 border-transparent cursor-pointer";
+            } else {
+                formLogin.style.display = 'block';
+                formReg.style.display = 'none';
+
+                btnLog.className = "flex-1 py-3 text-center font-bold text-blue-400 border-b-2 border-blue-400 cursor-pointer";
+                btnReg.className = "flex-1 py-3 text-center font-bold text-gray-400 border-b-2 border-transparent cursor-pointer";
+            }
+        }
+
+        function showAlert(msg, isSuccess = true) {
+            const alert = document.getElementById('alertBox');
+            alert.innerText = msg;
+            alert.className = `p-4 rounded-xl text-sm font-medium ${isSuccess ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'}`;
+            alert.style.display = 'block';
+            setTimeout(() => { alert.style.display = 'none'; }, 5000);
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnRegister');
+            btn.disabled = true;
+            btn.innerText = "Aguarde (Conectando API)...";
+
+            const nome = document.getElementById('regNome').value;
+            const email = document.getElementById('regEmail').value;
+            const senha = document.getElementById('regSenha').value;
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/cadastrar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, email, senha })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Erro ao efetuar cadastro');
+
+                showAlert('✅ Cadastro realizado com sucesso! Faça login para prosseguir.');
+                mostrarAba('login');
+                document.getElementById('loginEmail').value = email;
+            } catch (err) {
+                showAlert(`❌ ${err.message}`, false);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Criar Conta";
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnLogin');
+            btn.disabled = true;
+            btn.innerText = "Conectando...";
+
+            const email = document.getElementById('loginEmail').value;
+            const senha = document.getElementById('loginSenha').value;
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Falha no login');
+
+                currentUserId = data.usuario.id_usuario;
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('userDashboard').style.display = 'block';
+
+                showAlert(`🎉 Bem-vindo(a), ${data.usuario.nome}!`);
+                loadProfile();
+            } catch (err) {
+                showAlert(`❌ ${err.message}`, false);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Entrar";
+            }
+        }
+
+        async function loadProfile() {
+            if (!currentUserId) return;
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/usuarios/${currentUserId}/meu-perfil`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Erro ao carregar perfil');
+
+                document.getElementById('userName').innerText = data.nome;
+                document.getElementById('userEmail').innerText = data.email;
+                document.getElementById('userPoints').innerText = data.pontos_totais;
+
+                const container = document.getElementById('brindesList');
+                if (data.brindes && data.brindes.length > 0) {
+                    container.innerHTML = data.brindes.map(b => `
+                        <div class="bg-gray-700/50 p-3 rounded-lg border border-gray-600/50 flex items-center justify-between">
+                            <span class="font-medium text-sm text-emerald-300"><i class="fa-solid fa-ribbon mr-2"></i>${b.nome_brinde || b.nome || 'Brinde Digital'}</span>
+                            <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded">Desbloqueado</span>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">Nenhum brinde resgatado ainda.</p>`;
+                }
+            } catch (err) {
+                showAlert(err.message, false);
+            }
+        }
+
+        async function resgatarQRCode(qrcode_hash) {
+            if (!qrcode_hash) return showAlert('Informe o código QR Code', false);
+            if (!currentUserId) return showAlert('Usuário não autenticado', false);
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/conquistas/resgatar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_usuario: parseInt(currentUserId),
+                        qrcode_hash: qrcode_hash.trim()
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Erro ao resgatar');
+
+                showAlert(`🎉 ${data.mensagem} +${data.pontos_ganhos} pts!`);
+                document.getElementById('manualHash').value = '';
+                loadProfile();
+            } catch (err) {
+                showAlert(err.message, false);
+            }
+        }
+
+        function startScanner() {
+            stopScanner();
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 200, height: 200 } },
+                (decodedText) => {
+                    stopScanner();
+                    resgatarQRCode(decodedText);
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                showAlert("Erro ao abrir câmera: " + err, false);
+            });
+        }
+
+        function stopScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.clear();
+                }).catch(() => {});
+            }
+        }
+
+        function logout() {
+            currentUserId = null;
+            document.getElementById('authSection').style.display = 'block';
+            document.getElementById('userDashboard').style.display = 'none';
+            stopScanner();
+        }
+    </script>
+</body>
+</html>
