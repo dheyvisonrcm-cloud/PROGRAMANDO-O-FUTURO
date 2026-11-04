@@ -30,14 +30,14 @@
         <!-- SEÇÃO DE AUTENTICAÇÃO -->
         <section id="authSection" class="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700">
             
-            <!-- Botões de Alternância (Fora dos formulários) -->
+            <!-- Botões de Alternância Independentes -->
             <div class="flex border-b border-gray-700 mb-6">
-                <button type="button" id="tabLoginBtn" onclick="switchTab('login')" class="flex-1 py-3 text-center font-bold text-blue-400 border-b-2 border-blue-400 cursor-pointer">Login</button>
-                <button type="button" id="tabRegisterBtn" onclick="switchTab('register')" class="flex-1 py-3 text-center font-bold text-gray-400 border-b-2 border-transparent cursor-pointer">Cadastrar</button>
+                <button type="button" id="tabLoginBtn" class="flex-1 py-3 text-center font-bold text-blue-400 border-b-2 border-blue-400 cursor-pointer">Login</button>
+                <button type="button" id="tabRegisterBtn" class="flex-1 py-3 text-center font-bold text-gray-400 border-b-2 border-transparent cursor-pointer">Cadastrar</button>
             </div>
 
-            <!-- Formulário de Cadastro (Inicia Escondido) -->
-            <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+            <!-- Formulário Cadastro -->
+            <form id="registerForm" class="space-y-4 hidden">
                 <div>
                     <label class="text-xs text-gray-400 block mb-1">Nome Completo</label>
                     <input type="text" id="regNome" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
@@ -53,8 +53,8 @@
                 <button type="submit" id="btnRegister" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition cursor-pointer">Criar Conta</button>
             </form>
 
-            <!-- Formulário de Login (Inicia Visível) -->
-            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+            <!-- Formulário Login -->
+            <form id="loginForm" class="space-y-4">
                 <div>
                     <label class="text-xs text-gray-400 block mb-1">E-mail</label>
                     <input type="email" id="loginEmail" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
@@ -75,7 +75,7 @@
                         <h2 id="userName" class="text-xl font-bold text-white">---</h2>
                         <p id="userEmail" class="text-xs text-gray-400">---</p>
                     </div>
-                    <button onclick="logout()" class="text-xs bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30">Sair</button>
+                    <button id="btnLogout" class="text-xs bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30">Sair</button>
                 </div>
                 
                 <div class="mt-6 flex items-center justify-between bg-gray-900/60 p-4 rounded-xl border border-gray-700/50">
@@ -88,7 +88,7 @@
                             <span id="userPoints" class="text-2xl font-black text-yellow-400">0</span>
                         </div>
                     </div>
-                    <button onclick="loadProfile()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-rotate-right"></i></button>
+                    <button id="btnReloadProfile" class="text-gray-400 hover:text-white"><i class="fa-solid fa-rotate-right"></i></button>
                 </div>
             </div>
 
@@ -101,10 +101,10 @@
                 <div id="reader" class="overflow-hidden rounded-xl bg-gray-900 border border-gray-700"></div>
 
                 <div class="flex gap-2">
-                    <button onclick="startScanner()" class="flex-1 bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-600/30">
+                    <button id="btnStartCamera" class="flex-1 bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-600/30">
                         <i class="fa-solid fa-camera mr-1"></i> Abrir Câmera
                     </button>
-                    <button onclick="stopScanner()" class="bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-semibold">Parar</button>
+                    <button id="btnStopCamera" class="bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-semibold">Parar</button>
                 </div>
 
                 <div class="relative flex py-2 items-center">
@@ -115,7 +115,7 @@
 
                 <div class="flex gap-2">
                     <input type="text" id="manualHash" placeholder="Ex: REC_MZ_2026" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white">
-                    <button onclick="resgatarQRCode(document.getElementById('manualHash').value)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold">Resgatar</button>
+                    <button id="btnResgatarManual" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold">Resgatar</button>
                 </div>
             </div>
 
@@ -135,17 +135,11 @@
         let currentUserId = null;
         let html5QrcodeScanner = null;
 
-        // Alternar abas sem intervir com o evento de envio do formulário
-        function switchTab(target) {
+        // Atribuição direta de eventos após o carregamento da página
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnLoginTab = document.getElementById('tabLoginBtn');
+            const btnRegisterTab = document.getElementById('tabRegisterBtn');
             const regForm = document.getElementById('registerForm');
             const loginForm = document.getElementById('loginForm');
-            const tabReg = document.getElementById('tabRegisterBtn');
-            const tabLog = document.getElementById('tabLoginBtn');
 
-            if (target === 'register') {
-                regForm.classList.remove('hidden');
-                loginForm.classList.add('hidden');
-                
-                tabReg.className = "flex-1 py-3 text
-</body>
-</html>
+            btnLoginTab.addEventListener('click', (
