@@ -1,5 +1,8 @@
 
-
+## Tech stack
+- Back-end: Python, FastAPI, JWT, MySQL, SQLAlchemy
+- Front-end: HTML/CSS/JavaScript (consome a API)
+- Deploy: Render (API), Railway (banco), Netlify (front-end)
 
 🏛️ Trilhas da História: Recife & Olinda
 
@@ -41,3 +44,5 @@ Desbloqueio de colecionáveis digitais exclusivos, como cards de áreas explorad
 Espaço onde os usuários podem registrar e descrever suas experiências de visitação.
 
 Compartilhamento de fotos e dicas sobre as rotas percorridas.
+
+
