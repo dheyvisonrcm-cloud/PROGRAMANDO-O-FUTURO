@@ -2,7 +2,6 @@
 -- Guia Turistico Gamificado com IA
 -- Migracao do banco (MySQL 8 / Railway) - RF06 a RF09
 -- Pre-requisito: tabelas usuario e monumentos ja existentes (RF01-RF05)
--- Executar uma unica vez, na ordem abaixo.
 -- =====================================================================
 USE railway;
 
@@ -11,7 +10,7 @@ SET NAMES utf8mb4;
 -- ---------------------------------------------------------------------
 -- 1. Alteracao em tabela existente (RF06 - mapa e geolocalizacao)
 --    Colunas aceitam NULL para nao quebrar monumentos ja cadastrados;
---    preencha as coordenadas e depois, se quiser, torne-as NOT NULL.
+
 -- ---------------------------------------------------------------------
 ALTER TABLE monumentos
   ADD COLUMN latitude  DECIMAL(9,6) NULL,
@@ -78,8 +77,6 @@ CREATE TABLE usuario_missao (
 -- 3. Narrativas curtas "pilulas de lore" (RF07) e diario (RF09)
 --    Cada monumento tem 3 a 5 variantes pre-geradas pela IA (uma vez),
 --    revisadas pelo time (aprovada = 1) e sorteadas na hora da visita.
---    Se voce JA executou a versao anterior deste script, rode antes:
---    DROP TABLE usuario_narrativa;
 -- ---------------------------------------------------------------------
 CREATE TABLE narrativa_monumento (
   id_narrativa_monumento INT NOT NULL AUTO_INCREMENT,
@@ -115,19 +112,3 @@ CREATE TABLE usuario_narrativa (
   CONSTRAINT fk_un_usuario    FOREIGN KEY (id_usuario)             REFERENCES usuario (id_usuario)                           ON DELETE CASCADE,
   CONSTRAINT fk_un_narrativa  FOREIGN KEY (id_narrativa_monumento) REFERENCES narrativa_monumento (id_narrativa_monumento)  ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- ---------------------------------------------------------------------
--- 4. VERIFICACOES OPCIONAIS nas tabelas existentes (descomente se faltar)
---    Rode antes: SHOW CREATE TABLE usuario_conquista; SHOW CREATE TABLE usuario_brindes;
--- ---------------------------------------------------------------------
--- RF03 - trava anti-fraude (um resgate por usuario e monumento):
--- ALTER TABLE usuario_conquista
---   ADD UNIQUE KEY uq_usuario_monumento (id_usuario, id_monumento);
-
--- Sugestao: impedir o mesmo brinde duplicado para o mesmo usuario:
--- ALTER TABLE usuario_brindes
---   ADD UNIQUE KEY uq_usuario_brinde (id_usuario, brinde_id);
-
--- Opcional: base de fatos para a IA gerar as pilulas, caso a
--- descricao_monumento seja curta demais.
--- ALTER TABLE monumentos ADD COLUMN fatos_base TEXT NULL;
