@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import IntegrityError
+
 
 # Importação dos nossos módulos
 from database import engine, get_db, Base
@@ -107,17 +109,21 @@ def resgatar_qrcode(payload: schemas.ResgateQRCode, db: Session = Depends(get_db
     if ja_conquistou:
         raise HTTPException(status_code=400, detail="Você já resgatou os pontos deste monumento anteriormente!")
 
-    # 4. Grava a conquista no banco
+    # 4. Guarda os valores antes do commit (depois dele o SQLAlchemy recarrega os objetos)
+    pontos_ganhos = monumento.pontos
+    nome_monumento = monumento.nome_monumento
+
+    # 5. Prepara a conquista
     nova_conquista = models.UsuarioConquista(
         id_usuario=payload.id_usuario,
         id_monumento=monumento.id_monumento
     )
     db.add(nova_conquista)
 
-    # 5. Soma os pontos no perfil do usuário
-    usuario.pontos_totais += monumento.pontos
+    # 6. Soma os pontos direto no banco: UPDATE ... SET pontos_totais = pontos_totais + X
+    usuario.pontos_totais = models.Usuario.pontos_totais + pontos_ganhos
 
-    # 6. Atribui o brinde correspondente (se houver)
+    # 7. Atribui o brinde correspondente (se houver)
     brinde = db.query(models.Brinde).filter(models.Brinde.id_monumento == monumento.id_monumento).first()
     nome_brinde_ganho = None
 
@@ -129,39 +135,19 @@ def resgatar_qrcode(payload: schemas.ResgateQRCode, db: Session = Depends(get_db
         db.add(novo_brinde_usuario)
         nome_brinde_ganho = brinde.nome_brinde
 
-    db.commit()
+    # 8. Confirma tudo de uma vez. Se a trava UNIQUE do banco barrar, desfaz tudo
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Você já resgatou os pontos deste monumento anteriormente!")
+
     db.refresh(usuario)
 
     return {
         "mensagem": "Monumento conquistado com sucesso!",
-        "pontos_ganhos": monumento.pontos,
+        "pontos_ganhos": pontos_ganhos,
         "total_pontos_atual": usuario.pontos_totais,
-        "monumento": monumento.nome_monumento,
+        "monumento": nome_monumento,
         "brinde_desbloqueado": nome_brinde_ganho
-    }
-
-
-
-# ROTAS DE CONSULTA E PERFIL
-
-
-@app.get("/usuarios/{id_usuario}/meu-perfil", response_model=schemas.MeuPerfilResponse, tags=["Usuários"])
-def meu_perfil(id_usuario: int, db: Session = Depends(get_db)):
-    usuario = db.query(models.Usuario).filter(models.Usuario.id_usuario == id_usuario).first()
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
-
-    total_conquistas = db.query(models.UsuarioConquista).filter(models.UsuarioConquista.id_usuario == id_usuario).count()
-
-    # Busca brindes do usuário
-    registros_brindes = db.query(models.UsuarioBrinde).filter(models.UsuarioBrinde.id_usuario == id_usuario).all()
-    lista_brindes = [reg.brinde for reg in registros_brindes]
-
-    return {
-        "id_usuario": usuario.id_usuario,
-        "nome": usuario.nome,
-        "email": usuario.email,
-        "pontos_totais": usuario.pontos_totais,
-        "monumentos_conquistados": total_conquistas,
-        "brindes": lista_brindes
     }
