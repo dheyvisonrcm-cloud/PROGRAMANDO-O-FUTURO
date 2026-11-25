@@ -4,7 +4,7 @@ from sqlalchemy import text
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import IntegrityError
-
+from seguranca import gerar_hash, verificar_senha
 
 # Importação dos nossos módulos
 from database import engine, get_db, Base
@@ -59,7 +59,7 @@ def cadastrar_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_
     novo_usuario = models.Usuario(
         nome=usuario.nome,
         email=usuario.email,
-        senha_hash=usuario.senha  # Em produção usaremos hash/bcrypt
+        senha_hash=gerar_hash(usuario.senha)
     )
     db.add(novo_usuario)
     db.commit()
@@ -74,9 +74,10 @@ def login(dados: schemas.LoginData, db: Session = Depends(get_db)):
         models.Usuario.senha_hash == dados.senha
     ).first()
 
-    if not usuario:
+    usuario = db.query(models.Usuario).filter(models.Usuario.email == dados.email).first()
+    if not usuario or not verificar_senha(dados.senha, usuario.senha_hash):
         raise HTTPException(status_code=401, detail="E-mail ou senha incorretos.")
-
+    
     return {
         "access_token": f"token_simulado_{usuario.id_usuario}",
         "token_type": "bearer",
