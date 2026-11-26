@@ -10,6 +10,8 @@ from seguranca import gerar_hash, verificar_senha
 from database import engine, get_db, Base
 import models
 import schemas
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from seguranca import gerar_hash, verificar_senha, criar_token, ler_token
 
 # Cria as tabelas no MySQL se ainda não existirem
 models.Base.metadata.create_all(bind=engine)
@@ -27,6 +29,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+bearer = HTTPBearer()
+
+
+def get_current_user(
+    credenciais: HTTPAuthorizationCredentials = Depends(bearer),
+    db: Session = Depends(get_db),
+):
+    id_usuario = ler_token(credenciais.credentials)
+    if id_usuario is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Token inválido ou expirado.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    usuario = db.query(models.Usuario).filter(models.Usuario.id_usuario == id_usuario).first()
+    if not usuario:
+        raise HTTPException(status_code=401, detail="Usuário do token não existe mais.")
+    return usuario
 
 @app.get("/", tags=["Status"])
 def home():
@@ -79,7 +101,7 @@ def login(dados: schemas.LoginData, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="E-mail ou senha incorretos.")
     
     return {
-        "access_token": f"token_simulado_{usuario.id_usuario}",
+        "access_token": criar_token(usuario.id_usuario),
         "token_type": "bearer",
         "usuario": usuario
     }
@@ -90,11 +112,12 @@ def login(dados: schemas.LoginData, db: Session = Depends(get_db)):
 
 
 @app.post("/conquistas/resgatar", response_model=schemas.ResgateResponse, tags=["Gamificação"])
-def resgatar_qrcode(payload: schemas.ResgateQRCode, db: Session = Depends(get_db)):
-    # 1. Busca o usuário
-    usuario = db.query(models.Usuario).filter(models.Usuario.id_usuario == payload.id_usuario).first()
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+def resgatar_qrcode(
+    payload: schemas.ResgateQRCode,
+    usuario: models.Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    
 
     # 2. Busca o monumento pelo QR Code Hash
     monumento = db.query(models.Monumento).filter(models.Monumento.qrcode_hash == payload.qrcode_hash).first()
@@ -103,7 +126,7 @@ def resgatar_qrcode(payload: schemas.ResgateQRCode, db: Session = Depends(get_db
 
     # 3. Valida a Trava Anti-Fraude (Duplicidade)
     ja_conquistou = db.query(models.UsuarioConquista).filter(
-        models.UsuarioConquista.id_usuario == payload.id_usuario,
+        models.UsuarioConquista.id_usuario == usuario.id_usuario,
         models.UsuarioConquista.id_monumento == monumento.id_monumento
     ).first()
 
@@ -116,13 +139,13 @@ def resgatar_qrcode(payload: schemas.ResgateQRCode, db: Session = Depends(get_db
 
     # 5. Prepara a conquista
     nova_conquista = models.UsuarioConquista(
-        id_usuario=payload.id_usuario,
+        id_usuario=usuario.id_usuario,
         id_monumento=monumento.id_monumento
     )
     db.add(nova_conquista)
 
     # 6. Soma os pontos direto no banco: UPDATE ... SET pontos_totais = pontos_totais + X
-    usuario.pontos_totais = models.Usuario.pontos_totais + pontos_ganhos
+    usuario.pontos_totais += pontos_ganhos
 
     # 7. Atribui o brinde correspondente (se houver)
     brinde = db.query(models.Brinde).filter(models.Brinde.id_monumento == monumento.id_monumento).first()
@@ -130,7 +153,7 @@ def resgatar_qrcode(payload: schemas.ResgateQRCode, db: Session = Depends(get_db
 
     if brinde:
         novo_brinde_usuario = models.UsuarioBrinde(
-            id_usuario=payload.id_usuario,
+            id_usuario=usuario.id_usuario,
             brinde_id=brinde.brinde_id
         )
         db.add(novo_brinde_usuario)
@@ -151,4 +174,27 @@ def resgatar_qrcode(payload: schemas.ResgateQRCode, db: Session = Depends(get_db
         "total_pontos_atual": usuario.pontos_totais,
         "monumento": nome_monumento,
         "brinde_desbloqueado": nome_brinde_ganho
+    }
+# ==========================================
+# ROTAS DE CONSULTA E PERFIL
+# ==========================================
+
+@app.get("/usuarios/me", response_model=schemas.MeuPerfilResponse, tags=["Usuários"])
+def meu_perfil(usuario: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    total_conquistas = db.query(models.UsuarioConquista).filter(
+        models.UsuarioConquista.id_usuario == usuario.id_usuario
+    ).count()
+
+    registros_brindes = db.query(models.UsuarioBrinde).filter(
+        models.UsuarioBrinde.id_usuario == usuario.id_usuario
+    ).all()
+    lista_brindes = [reg.brinde for reg in registros_brindes]
+
+    return {
+        "id_usuario": usuario.id_usuario,
+        "nome": usuario.nome,
+        "email": usuario.email,
+        "pontos_totais": usuario.pontos_totais,
+        "monumentos_conquistados": total_conquistas,
+        "brindes": lista_brindes,
     }

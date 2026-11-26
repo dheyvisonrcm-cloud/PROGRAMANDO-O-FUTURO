@@ -36,7 +36,6 @@ class TokenResponse(BaseModel):
 # SCHEMAS DE MONUMENTOS E RESGATE DE QR CODE
 
 class ResgateQRCode(BaseModel):
-    id_usuario: int
     qrcode_hash: str
 
 
