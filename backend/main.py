@@ -288,3 +288,127 @@ def detalhar_trilha(id_trilha: int, db: Session = Depends(get_db)):
             for tm, m in linhas
         ],
     }
+
+# ROTAS COM LOGIN: FAVORITOS E PÍLULAS SALVAS
+
+
+@app.post("/favoritos/{id_monumento}", response_model=schemas.MensagemResponse, status_code=201, tags=["Favoritos"])
+def favoritar(
+    id_monumento: int,
+    usuario: models.Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    monumento = db.query(models.Monumento).filter(models.Monumento.id_monumento == id_monumento).first()
+    if not monumento:
+        raise HTTPException(status_code=404, detail="Monumento não encontrado.")
+
+    ja_favoritou = db.query(models.UsuarioFavorito).filter(
+        models.UsuarioFavorito.id_usuario == usuario.id_usuario,
+        models.UsuarioFavorito.id_monumento == id_monumento
+    ).first()
+    if ja_favoritou:
+        raise HTTPException(status_code=400, detail="Este monumento já está nos seus favoritos.")
+
+    db.add(models.UsuarioFavorito(id_usuario=usuario.id_usuario, id_monumento=id_monumento))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Este monumento já está nos seus favoritos.")
+
+    return {"mensagem": "Monumento adicionado aos favoritos."}
+
+
+@app.delete("/favoritos/{id_monumento}", response_model=schemas.MensagemResponse, tags=["Favoritos"])
+def desfavoritar(
+    id_monumento: int,
+    usuario: models.Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    favorito = db.query(models.UsuarioFavorito).filter(
+        models.UsuarioFavorito.id_usuario == usuario.id_usuario,
+        models.UsuarioFavorito.id_monumento == id_monumento
+    ).first()
+    if not favorito:
+        raise HTTPException(status_code=404, detail="Este monumento não está nos seus favoritos.")
+
+    db.delete(favorito)
+    db.commit()
+    return {"mensagem": "Monumento removido dos favoritos."}
+
+
+@app.get("/favoritos", response_model=List[schemas.FavoritoResponse], tags=["Favoritos"])
+def listar_favoritos(usuario: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    linhas = (
+        db.query(models.UsuarioFavorito, models.Monumento)
+        .join(models.Monumento, models.Monumento.id_monumento == models.UsuarioFavorito.id_monumento)
+        .filter(models.UsuarioFavorito.id_usuario == usuario.id_usuario)
+        .order_by(models.UsuarioFavorito.data_favorito.desc())
+        .all()
+    )
+    return [
+        {
+            "id_monumento": m.id_monumento,
+            "nome_monumento": m.nome_monumento,
+            "descricao_monumento": m.descricao_monumento,
+            "data_favorito": f.data_favorito,
+        }
+        for f, m in linhas
+    ]
+
+
+@app.post("/narrativas/{id_narrativa_monumento}/salvar", response_model=schemas.MensagemResponse, status_code=201, tags=["Narrativas"])
+def salvar_narrativa(
+    id_narrativa_monumento: int,
+    usuario: models.Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Só pílulas aprovadas podem ser salvas
+    narrativa = db.query(models.NarrativaMonumento).filter(
+        models.NarrativaMonumento.id_narrativa_monumento == id_narrativa_monumento,
+        models.NarrativaMonumento.aprovada == True  # noqa: E712
+    ).first()
+    if not narrativa:
+        raise HTTPException(status_code=404, detail="Pílula não encontrada.")
+
+    ja_salvou = db.query(models.UsuarioNarrativa).filter(
+        models.UsuarioNarrativa.id_usuario == usuario.id_usuario,
+        models.UsuarioNarrativa.id_narrativa_monumento == id_narrativa_monumento
+    ).first()
+    if ja_salvou:
+        raise HTTPException(status_code=400, detail="Você já salvou esta pílula.")
+
+    db.add(models.UsuarioNarrativa(
+        id_usuario=usuario.id_usuario,
+        id_narrativa_monumento=id_narrativa_monumento
+    ))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Você já salvou esta pílula.")
+
+    return {"mensagem": "Pílula salva no seu diário."}
+
+
+@app.get("/narrativas/salvas", response_model=List[schemas.NarrativaSalvaResponse], tags=["Narrativas"])
+def listar_narrativas_salvas(usuario: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    linhas = (
+        db.query(models.UsuarioNarrativa, models.NarrativaMonumento, models.Monumento)
+        .join(models.NarrativaMonumento, models.NarrativaMonumento.id_narrativa_monumento == models.UsuarioNarrativa.id_narrativa_monumento)
+        .join(models.Monumento, models.Monumento.id_monumento == models.NarrativaMonumento.id_monumento)
+        .filter(models.UsuarioNarrativa.id_usuario == usuario.id_usuario)
+        .order_by(models.UsuarioNarrativa.data_salvamento.desc())
+        .all()
+    )
+    return [
+        {
+            "id_narrativa_monumento": n.id_narrativa_monumento,
+            "id_monumento": m.id_monumento,
+            "nome_monumento": m.nome_monumento,
+            "texto_narrativa": n.texto_narrativa,
+            "desafio": n.desafio,
+            "data_salvamento": us.data_salvamento,
+        }
+        for us, n, m in linhas
+    ]

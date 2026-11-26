@@ -117,3 +117,24 @@ class TrilhaDetalhe(BaseModel):
     descricao_trilha: Optional[str] = None
     tema: Optional[str] = None
     monumentos: List[MonumentoNaTrilha] = []
+    
+# SCHEMAS DE FAVORITOS E PÍLULAS SALVAS
+
+class MensagemResponse(BaseModel):
+    mensagem: str
+
+
+class FavoritoResponse(BaseModel):
+    id_monumento: int
+    nome_monumento: str
+    descricao_monumento: Optional[str] = None
+    data_favorito: datetime
+
+
+class NarrativaSalvaResponse(BaseModel):
+    id_narrativa_monumento: int
+    id_monumento: int
+    nome_monumento: str
+    texto_narrativa: str
+    desafio: Optional[str] = None
+    data_salvamento: datetime
