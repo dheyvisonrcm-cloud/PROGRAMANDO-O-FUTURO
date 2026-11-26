@@ -69,3 +69,51 @@ class MeuPerfilResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+        
+# SCHEMAS DE MAPA, NARRATIVAS E TRILHAS
+
+class MonumentoMapa(BaseModel):
+    # IMPORTANTE: não tem qrcode_hash de propósito. Ele prova que a pessoa esteve no local.
+    id_monumento: int
+    nome_monumento: str
+    descricao_monumento: Optional[str] = None
+    pontos: int
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+
+class NarrativaResponse(BaseModel):
+    id_narrativa_monumento: int
+    id_monumento: int
+    texto_narrativa: str
+    desafio: Optional[str] = None
+    total_variantes: int  # o front só mostra "ver outra" se for maior que 1
+
+
+class TrilhaResumo(BaseModel):
+    id_trilha: int
+    nome_trilha: str
+    descricao_trilha: Optional[str] = None
+    tema: Optional[str] = None
+    total_monumentos: int
+
+
+class MonumentoNaTrilha(BaseModel):
+    ordem: int
+    id_monumento: int
+    nome_monumento: str
+    descricao_monumento: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+
+class TrilhaDetalhe(BaseModel):
+    id_trilha: int
+    nome_trilha: str
+    descricao_trilha: Optional[str] = None
+    tema: Optional[str] = None
+    monumentos: List[MonumentoNaTrilha] = []
