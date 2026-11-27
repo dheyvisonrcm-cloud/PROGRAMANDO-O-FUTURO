@@ -516,49 +516,6 @@ def listar_missoes(usuario: models.Usuario = Depends(get_current_user), db: Sess
     # Missões são concluídas automaticamente no /conquistas/resgatar; aqui só o status/progresso
     return listar_missoes_com_progresso(db, usuario)
 
-@app.get("/diario")
-def obter_diario(
-    usuario: models.Usuario = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    conquistas = (
-        db.query(models.UsuarioConquista, models.Monumento)
-        .join(models.Monumento, models.UsuarioConquista.id_monumento == models.Monumento.id_monumento)
-        .filter(models.UsuarioConquista.id_usuario == usuario.id_usuario)
-        .order_by(models.UsuarioConquista.data_conquista.desc())
-        .all()
-    )
-    favoritos = (
-        db.query(models.UsuarioFavorito, models.Monumento)
-        .join(models.Monumento, models.UsuarioFavorito.id_monumento == models.Monumento.id_monumento)
-        .filter(models.UsuarioFavorito.id_usuario == usuario.id_usuario)
-        .all()
-    )
-    narrativas = (
-        db.query(models.UsuarioNarrativa, models.NarrativaMonumento, models.Monumento)
-        .join(models.NarrativaMonumento, models.UsuarioNarrativa.id_narrativa_monumento == models.NarrativaMonumento.id_narrativa_monumento)
-        .join(models.Monumento, models.NarrativaMonumento.id_monumento == models.Monumento.id_monumento)
-        .filter(models.UsuarioNarrativa.id_usuario == usuario.id_usuario)
-        .all()
-    )
-
-    return {
-        "usuario": usuario.nome,
-        "pontos_totais": usuario.pontos_totais,
-        "conquistas": [
-            {"id_monumento": m.id_monumento, "nome_monumento": m.nome_monumento, "data_conquista": c.data_conquista}
-            for c, m in conquistas
-        ],
-        "favoritos": [
-            {"id_monumento": m.id_monumento, "nome_monumento": m.nome_monumento, "cidade": m.cidade}
-            for _, m in favoritos
-        ],
-        "narrativas_salvas": [
-            {"id_narrativa_monumento": n.id_narrativa_monumento, "monumento": m.nome_monumento, "texto": n.texto, "desafio": n.desafio}
-            for _, n, m in narrativas
-        ],
-    }
-
 @app.get("/diario", tags=["Diário"])
 def obter_diario(
     usuario: models.Usuario = Depends(get_current_user),
@@ -618,8 +575,9 @@ def obter_diario(
         "narrativas_salvas": [
             {
                 "id_narrativa_monumento": n.id_narrativa_monumento,
-                "monumento": m.nome_monumento,
-                "texto": n.texto,
+                "id_monumento": m.id_monumento,
+                "nome_monumento": m.nome_monumento,
+                "texto_narrativa": n.texto_narrativa,
                 "desafio": n.desafio,
             }
             for _, n, m in narrativas
