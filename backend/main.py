@@ -58,17 +58,6 @@ def home():
     return {"status": "API online", "mensagem": "Servidor FastAPI rodando com sucesso!"}
 
 
-@app.get("/testar-banco", tags=["Status"])
-def testar_banco(db: Session = Depends(get_db)):
-    try:
-        result = db.execute(text("SELECT COUNT(*) FROM monumentos")).fetchone()
-        return {
-            "status": "Conexão com o banco OK!",
-            "total_monumentos": result[0]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro de conexão: {str(e)}")
-
 
 
 # ROTAS DE USUÁRIOS & AUTENTICAÇÃO
