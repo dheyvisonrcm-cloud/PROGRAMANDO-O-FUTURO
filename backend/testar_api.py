@@ -161,3 +161,35 @@ if falhas:
     print(f"{falhas} verificação(ões) falharam.")
     sys.exit(1)
 print("Tudo certo.")
+
+### ------------------------------------------------- pílulas: limites e erros
+r = chamar("GET", f"/monumentos/{id_monumento}/narrativa")
+if r.status_code == 200:
+    dados_pilula = r.json()
+    palavras = len(dados_pilula.get("texto", "").split())
+    checar("pílula respeita limite de tamanho (<= 90 palavras)", palavras <= 90, f"{palavras} palavras")
+
+    id_atual = dados_pilula["id_narrativa_monumento"]
+    r2 = chamar("GET", f"/monumentos/{id_monumento}/narrativa?excluir={id_atual}")
+    checar("ver outra retorna variante diferente", r2.status_code == 200 and r2.json()["id_narrativa_monumento"] != id_atual, r2.text)
+
+r_inexistente = chamar("GET", "/monumentos/999999/narrativa")
+checar("monumento inexistente/sem pílula retorna 404", r_inexistente.status_code == 404, str(r_inexistente.status_code))
+
+### ------------------------------------------------- isolamento entre usuários
+email_b = f"teste_b_{uuid.uuid4().hex[:8]}@teste-api.com"
+chamar("POST", "/cadastrar", json={"nome": "Usuario B", "email": email_b, "senha": senha})
+token_b = chamar("POST", "/login", json={"email": email_b, "senha": senha}).json()["access_token"]
+
+perfil_b = chamar("GET", "/usuarios/me", token_b)
+checar("isolamento: Usuário B começa com 0 pontos", perfil_b.status_code == 200 and perfil_b.json().get("pontos_totais") == 0, perfil_b.text)
+
+r_diario_b = chamar("GET", "/diario", token_b)
+checar("GET /diario responde 200 OK", r_diario_b.status_code == 200, f"status={r_diario_b.status_code} body={r_diario_b.text}")
+if r_diario_b.status_code == 200:
+    diario_b = r_diario_b.json()
+    checar(
+        "isolamento: Usuário B não vê conquistas, favoritos nem pílulas do Usuário A",
+        all(len(v) == 0 for v in diario_b.values() if isinstance(v, list)),
+        str(diario_b)
+    )
