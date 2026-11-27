@@ -138,3 +138,39 @@ class NarrativaSalvaResponse(BaseModel):
     texto_narrativa: str
     desafio: Optional[str] = None
     data_salvamento: datetime
+
+# SCHEMAS DE PROGRESSO EM TRILHAS E MISSÕES
+
+class EtapaProgresso(BaseModel):
+    ordem: int
+    id_monumento: int
+    nome_monumento: str
+    concluida: bool
+
+
+class ProgressoTrilha(BaseModel):
+    id_trilha: int
+    nome_trilha: str
+    status: str
+    total_etapas: int
+    etapas_concluidas: int
+    proximo_monumento: Optional[EtapaProgresso] = None
+    etapas: List[EtapaProgresso] = []
+
+
+class MissaoResponse(BaseModel):
+    id_missao: int
+    descricao_missao: str
+    tipo_missao: Optional[str] = None
+    raio_metros: int
+    concluida: bool
+
+
+class PosicaoUsuario(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+
+
+class ConcluirMissaoResponse(BaseModel):
+    mensagem: str
+    distancia_metros: int

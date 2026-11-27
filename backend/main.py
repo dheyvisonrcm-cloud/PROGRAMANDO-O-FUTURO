@@ -7,6 +7,8 @@ from sqlalchemy.exc import IntegrityError
 from seguranca import gerar_hash, verificar_senha
 import random
 from typing import Optional
+from datetime import datetime
+from geo import distancia_metros
 
 # Importação dos nossos módulos
 from database import engine, get_db, Base
@@ -412,3 +414,175 @@ def listar_narrativas_salvas(usuario: models.Usuario = Depends(get_current_user)
         }
         for us, n, m in linhas
     ]
+
+# ROTAS COM LOGIN: PROGRESSO EM TRILHAS E MISSÕES
+
+
+@app.post("/trilhas/{id_trilha}/iniciar", response_model=schemas.MensagemResponse, status_code=201, tags=["Trilhas"])
+def iniciar_trilha(
+    id_trilha: int,
+    usuario: models.Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    trilha = db.query(models.Trilha).filter(models.Trilha.id_trilha == id_trilha).first()
+    if not trilha:
+        raise HTTPException(status_code=404, detail="Trilha não encontrada.")
+
+    ja_iniciou = db.query(models.UsuarioTrilha).filter(
+        models.UsuarioTrilha.id_usuario == usuario.id_usuario,
+        models.UsuarioTrilha.id_trilha == id_trilha
+    ).first()
+    if ja_iniciou:
+        raise HTTPException(status_code=400, detail="Você já iniciou esta trilha.")
+
+    db.add(models.UsuarioTrilha(id_usuario=usuario.id_usuario, id_trilha=id_trilha))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Você já iniciou esta trilha.")
+
+    return {"mensagem": "Trilha iniciada! Boa exploração."}
+
+
+@app.get("/trilhas/{id_trilha}/progresso", response_model=schemas.ProgressoTrilha, tags=["Trilhas"])
+def progresso_trilha(
+    id_trilha: int,
+    usuario: models.Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    registro = db.query(models.UsuarioTrilha).filter(
+        models.UsuarioTrilha.id_usuario == usuario.id_usuario,
+        models.UsuarioTrilha.id_trilha == id_trilha
+    ).first()
+    if not registro:
+        raise HTTPException(status_code=404, detail="Você ainda não iniciou esta trilha.")
+
+    trilha = db.query(models.Trilha).filter(models.Trilha.id_trilha == id_trilha).first()
+
+    linhas = (
+        db.query(models.TrilhaMonumento, models.Monumento)
+        .join(models.Monumento, models.Monumento.id_monumento == models.TrilhaMonumento.id_monumento)
+        .filter(models.TrilhaMonumento.id_trilha == id_trilha)
+        .order_by(models.TrilhaMonumento.ordem)
+        .all()
+    )
+
+    # Uma etapa conta como concluída quando o usuário resgatou o QR Code daquele monumento
+    ids = [m.id_monumento for tm, m in linhas]
+    conquistados = set()
+    if ids:
+        conquistados = {
+            c.id_monumento
+            for c in db.query(models.UsuarioConquista).filter(
+                models.UsuarioConquista.id_usuario == usuario.id_usuario,
+                models.UsuarioConquista.id_monumento.in_(ids)
+            ).all()
+        }
+
+    etapas = [
+        {
+            "ordem": tm.ordem,
+            "id_monumento": m.id_monumento,
+            "nome_monumento": m.nome_monumento,
+            "concluida": m.id_monumento in conquistados,
+        }
+        for tm, m in linhas
+    ]
+    concluidas = sum(1 for e in etapas if e["concluida"])
+    proximo = next((e for e in etapas if not e["concluida"]), None)
+
+    # Marca a trilha como concluída na primeira vez em que todas as etapas estiverem feitas
+    if etapas and concluidas == len(etapas) and registro.status != "concluida":
+        registro.status = "concluida"
+        registro.data_conclusao = datetime.utcnow()
+        db.commit()
+
+    return {
+        "id_trilha": trilha.id_trilha,
+        "nome_trilha": trilha.nome_trilha,
+        "status": registro.status,
+        "total_etapas": len(etapas),
+        "etapas_concluidas": concluidas,
+        "proximo_monumento": proximo,
+        "etapas": etapas,
+    }
+
+
+@app.get("/monumentos/{id_monumento}/missoes", response_model=List[schemas.MissaoResponse], tags=["Missões"])
+def listar_missoes(
+    id_monumento: int,
+    usuario: models.Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    monumento = db.query(models.Monumento).filter(models.Monumento.id_monumento == id_monumento).first()
+    if not monumento:
+        raise HTTPException(status_code=404, detail="Monumento não encontrado.")
+
+    missoes = db.query(models.Missao).filter(models.Missao.id_monumento == id_monumento).all()
+
+    concluidas = set()
+    if missoes:
+        concluidas = {
+            um.id_missao
+            for um in db.query(models.UsuarioMissao).filter(
+                models.UsuarioMissao.id_usuario == usuario.id_usuario,
+                models.UsuarioMissao.id_missao.in_([m.id_missao for m in missoes])
+            ).all()
+        }
+
+    return [
+        {
+            "id_missao": m.id_missao,
+            "descricao_missao": m.descricao_missao,
+            "tipo_missao": m.tipo_missao,
+            "raio_metros": m.raio_metros,
+            "concluida": m.id_missao in concluidas,
+        }
+        for m in missoes
+    ]
+
+
+@app.post("/missoes/{id_missao}/concluir", response_model=schemas.ConcluirMissaoResponse, tags=["Missões"])
+def concluir_missao(
+    id_missao: int,
+    posicao: schemas.PosicaoUsuario,
+    usuario: models.Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    missao = db.query(models.Missao).filter(models.Missao.id_missao == id_missao).first()
+    if not missao:
+        raise HTTPException(status_code=404, detail="Missão não encontrada.")
+
+    monumento = db.query(models.Monumento).filter(models.Monumento.id_monumento == missao.id_monumento).first()
+    if monumento.latitude is None or monumento.longitude is None:
+        raise HTTPException(status_code=400, detail="Este monumento ainda não tem coordenadas cadastradas.")
+
+    ja_concluiu = db.query(models.UsuarioMissao).filter(
+        models.UsuarioMissao.id_usuario == usuario.id_usuario,
+        models.UsuarioMissao.id_missao == id_missao
+    ).first()
+    if ja_concluiu:
+        raise HTTPException(status_code=400, detail="Você já concluiu esta missão.")
+
+    # A distância é calculada aqui no servidor. A posição enviada NÃO é gravada no banco.
+    distancia = distancia_metros(
+        posicao.latitude, posicao.longitude,
+        float(monumento.latitude), float(monumento.longitude)
+    )
+    if distancia > missao.raio_metros:
+        faltam = round(distancia - missao.raio_metros)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Você está a cerca de {round(distancia)} m do local. "
+                   f"Chegue a até {missao.raio_metros} m (faltam cerca de {faltam} m)."
+        )
+
+    db.add(models.UsuarioMissao(id_usuario=usuario.id_usuario, id_missao=id_missao))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Você já concluiu esta missão.")
+
+    return {"mensagem": "Missão concluída!", "distancia_metros": round(distancia)}
