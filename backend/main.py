@@ -584,6 +584,18 @@ def obter_diario(
         .filter(models.UsuarioNarrativa.id_usuario == usuario.id_usuario)
         .all()
     )
+    trilhas = (
+        db.query(models.UsuarioTrilha, models.Trilha)
+        .join(models.Trilha, models.UsuarioTrilha.id_trilha == models.Trilha.id_trilha)
+        .filter(models.UsuarioTrilha.id_usuario == usuario.id_usuario)
+        .all()
+    )
+    missoes = (
+        db.query(models.UsuarioMissao, models.Missao)
+        .join(models.Missao, models.UsuarioMissao.id_missao == models.Missao.id_missao)
+        .filter(models.UsuarioMissao.id_usuario == usuario.id_usuario)
+        .all()
+    )
 
     return {
         "conquistas": [
@@ -612,4 +624,24 @@ def obter_diario(
             }
             for _, n, m in narrativas
         ],
+        "trilhas": [
+            {
+                "id_trilha": t.id_trilha,
+                "nome_trilha": t.nome_trilha,
+                "status": ut.status,
+                "data_inicio": ut.data_inicio,
+                "data_conclusao": ut.data_conclusao,
+            }
+            for ut, t in trilhas
+        ],
+        "missoes": [
+            {
+                "id_missao": m.id_missao,
+                "titulo": m.titulo,
+                "pontos_recompensa": m.pontos_recompensa,
+                "data_conclusao": um.data_conclusao,
+            }
+            for um, m in missoes
+        ],
+
     }
