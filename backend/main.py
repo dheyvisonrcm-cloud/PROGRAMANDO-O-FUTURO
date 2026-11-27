@@ -4,11 +4,10 @@ from sqlalchemy import text
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import IntegrityError
-from seguranca import gerar_hash, verificar_senha
 import random
 from typing import Optional
 from datetime import datetime
-from geo import distancia_metros
+from missoes_service import verificar_missoes, listar_missoes_com_progresso
 
 # Importação dos nossos módulos
 from database import engine, get_db, Base
@@ -17,7 +16,7 @@ import schemas
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from seguranca import gerar_hash, verificar_senha, criar_token, ler_token
 
-# Cria as tabelas no MySQL se ainda não existirem
+# Cria as tabelas no banco (Postgres/Neon) se ainda não existirem
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -64,7 +63,7 @@ def testar_banco(db: Session = Depends(get_db)):
     try:
         result = db.execute(text("SELECT COUNT(*) FROM monumentos")).fetchone()
         return {
-            "status": "Conexão com o MySQL OK!",
+            "status": "Conexão com o banco OK!",
             "total_monumentos": result[0]
         }
     except Exception as e:
@@ -95,11 +94,6 @@ def cadastrar_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_
 
 @app.post("/login", response_model=schemas.TokenResponse, tags=["Usuários"])
 def login(dados: schemas.LoginData, db: Session = Depends(get_db)):
-    usuario = db.query(models.Usuario).filter(
-        models.Usuario.email == dados.email,
-        models.Usuario.senha_hash == dados.senha
-    ).first()
-
     usuario = db.query(models.Usuario).filter(models.Usuario.email == dados.email).first()
     if not usuario or not verificar_senha(dados.senha, usuario.senha_hash):
         raise HTTPException(status_code=401, detail="E-mail ou senha incorretos.")
@@ -163,7 +157,14 @@ def resgatar_qrcode(
         db.add(novo_brinde_usuario)
         nome_brinde_ganho = brinde.nome_brinde
 
-    # 8. Confirma tudo de uma vez. Se a trava UNIQUE do banco barrar, desfaz tudo
+    # 8. Missões: conquista, pontos e missões concluídas na mesma transação
+    missoes_novas = verificar_missoes(db, usuario)
+    missoes_concluidas = [
+        {"titulo": m.titulo, "pontos_recompensa": m.pontos_recompensa}
+        for m in missoes_novas
+    ]  # montado antes do commit, que expira os objetos
+
+    # 9. Confirma tudo de uma vez. Se a trava UNIQUE do banco barrar, desfaz tudo
     try:
         db.commit()
     except IntegrityError:
@@ -177,7 +178,8 @@ def resgatar_qrcode(
         "pontos_ganhos": pontos_ganhos,
         "total_pontos_atual": usuario.pontos_totais,
         "monumento": nome_monumento,
-        "brinde_desbloqueado": nome_brinde_ganho
+        "brinde_desbloqueado": nome_brinde_ganho,
+        "missoes_concluidas": missoes_concluidas,
     }
 # ==========================================
 # ROTAS DE CONSULTA E PERFIL
@@ -509,80 +511,7 @@ def progresso_trilha(
     }
 
 
-@app.get("/monumentos/{id_monumento}/missoes", response_model=List[schemas.MissaoResponse], tags=["Missões"])
-def listar_missoes(
-    id_monumento: int,
-    usuario: models.Usuario = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    monumento = db.query(models.Monumento).filter(models.Monumento.id_monumento == id_monumento).first()
-    if not monumento:
-        raise HTTPException(status_code=404, detail="Monumento não encontrado.")
-
-    missoes = db.query(models.Missao).filter(models.Missao.id_monumento == id_monumento).all()
-
-    concluidas = set()
-    if missoes:
-        concluidas = {
-            um.id_missao
-            for um in db.query(models.UsuarioMissao).filter(
-                models.UsuarioMissao.id_usuario == usuario.id_usuario,
-                models.UsuarioMissao.id_missao.in_([m.id_missao for m in missoes])
-            ).all()
-        }
-
-    return [
-        {
-            "id_missao": m.id_missao,
-            "descricao_missao": m.descricao_missao,
-            "tipo_missao": m.tipo_missao,
-            "raio_metros": m.raio_metros,
-            "concluida": m.id_missao in concluidas,
-        }
-        for m in missoes
-    ]
-
-
-@app.post("/missoes/{id_missao}/concluir", response_model=schemas.ConcluirMissaoResponse, tags=["Missões"])
-def concluir_missao(
-    id_missao: int,
-    posicao: schemas.PosicaoUsuario,
-    usuario: models.Usuario = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    missao = db.query(models.Missao).filter(models.Missao.id_missao == id_missao).first()
-    if not missao:
-        raise HTTPException(status_code=404, detail="Missão não encontrada.")
-
-    monumento = db.query(models.Monumento).filter(models.Monumento.id_monumento == missao.id_monumento).first()
-    if monumento.latitude is None or monumento.longitude is None:
-        raise HTTPException(status_code=400, detail="Este monumento ainda não tem coordenadas cadastradas.")
-
-    ja_concluiu = db.query(models.UsuarioMissao).filter(
-        models.UsuarioMissao.id_usuario == usuario.id_usuario,
-        models.UsuarioMissao.id_missao == id_missao
-    ).first()
-    if ja_concluiu:
-        raise HTTPException(status_code=400, detail="Você já concluiu esta missão.")
-
-    # A distância é calculada aqui no servidor. A posição enviada NÃO é gravada no banco.
-    distancia = distancia_metros(
-        posicao.latitude, posicao.longitude,
-        float(monumento.latitude), float(monumento.longitude)
-    )
-    if distancia > missao.raio_metros:
-        faltam = round(distancia - missao.raio_metros)
-        raise HTTPException(
-            status_code=400,
-            detail=f"Você está a cerca de {round(distancia)} m do local. "
-                   f"Chegue a até {missao.raio_metros} m (faltam cerca de {faltam} m)."
-        )
-
-    db.add(models.UsuarioMissao(id_usuario=usuario.id_usuario, id_missao=id_missao))
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=400, detail="Você já concluiu esta missão.")
-
-    return {"mensagem": "Missão concluída!", "distancia_metros": round(distancia)}
+@app.get("/missoes", response_model=List[schemas.MissaoResponse], tags=["Missões"])
+def listar_missoes(usuario: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Missões são concluídas automaticamente no /conquistas/resgatar; aqui só o status/progresso
+    return listar_missoes_com_progresso(db, usuario)

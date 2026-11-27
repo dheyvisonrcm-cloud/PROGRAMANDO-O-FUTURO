@@ -26,6 +26,7 @@ class Monumento(Base):
     descricao_monumento = Column(String(255), nullable=True)
     qrcode_hash = Column(String(255), unique=True, nullable=False, index=True)
     pontos = Column(Integer, default=10, nullable=False)
+    cidade = Column(String(50), nullable=True)  # 'Olinda' | 'Recife'
     latitude = Column(Numeric(9, 6), nullable=True)
     longitude = Column(Numeric(9, 6), nullable=True)
 
@@ -108,10 +109,24 @@ class Missao(Base):
     __tablename__ = "missao"
 
     id_missao = Column(Integer, primary_key=True, autoincrement=True)
-    id_monumento = Column(Integer, ForeignKey("monumentos.id_monumento", ondelete="CASCADE"), nullable=False)
+    titulo = Column(String(100), nullable=False, unique=True)
     descricao_missao = Column(String(500), nullable=False)
-    tipo_missao = Column(String(50), nullable=True)
-    raio_metros = Column(Integer, nullable=False, default=200)
+    # 'todos_monumentos' | 'cidades_mesmo_dia'
+    tipo_regra = Column(String(30), nullable=False)
+    pontos_recompensa = Column(Integer, nullable=False, default=200)
+
+
+class MissaoMonumento(Base):
+    """Monumentos exigidos por uma missao do tipo 'todos_monumentos'."""
+    __tablename__ = "missao_monumento"
+
+    id_missao_monumento = Column(Integer, primary_key=True, autoincrement=True)
+    id_missao = Column(Integer, ForeignKey("missao.id_missao", ondelete="CASCADE"), nullable=False)
+    id_monumento = Column(Integer, ForeignKey("monumentos.id_monumento", ondelete="CASCADE"), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("id_missao", "id_monumento", name="uq_missao_monumento"),
+    )
 
 
 class UsuarioTrilha(Base):
