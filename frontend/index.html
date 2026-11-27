@@ -1607,4 +1607,29 @@
 
       const favEl = document.getElementById("favoritesList");
       favEl.innerHTML = state.favorites.length
-        ? state.favorites.map(f => `<div style="padding:8px 10px;background:var(--cream);border-radius:10px;color:var(--petrol);font-weight:600;">♥ ${f.nome || `Monumento #${f.id_
+        ? state.favorites.map(f => `<div style="padding:8px 10px;background:var(--cream);border-radius:10px;color:var(--petrol);font-weight:600;">♥ ${f.nome || `Monumento #${f.id_onumento}`}</div>`).join("")
+        : "Nenhum favorito salvo ainda.";
+
+      const savedEl = document.getElementById("savedNarrativesList");
+      savedEl.innerHTML = state.savedNarratives.length
+        ? state.savedNarratives.map(n => `
+            <div style="padding:10px;background:var(--cream);border-radius:12px;border:1px solid var(--border);">
+              <strong style="color:var(--petrol);display:block;margin-bottom:4px;">${n.monumento_nome || "História Salva"}</strong>
+              <p style="line-height:1.5;">${n.texto_narrativa || ""}</p>
+            </div>`).join("")
+        : "Nenhuma pílula histórica salva no diário.";
+    }
+
+    // =========================================================
+    // INICIALIZAÇÃO AUTOMÁTICA (AUTO-LOGIN SE TOKEN EXISTIR)
+    // =========================================================
+    window.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      const savedToken = localStorage.getItem("access_token");
+      if (savedToken) {
+        bootstrapApp();
+      }
+    });
+  </script>
+</body>
+</html>
