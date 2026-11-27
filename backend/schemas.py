@@ -39,12 +39,17 @@ class ResgateQRCode(BaseModel):
     qrcode_hash: str
 
 
+class MissaoConcluidaResumo(BaseModel):
+    titulo: str
+    pontos_recompensa: int
+
 class ResgateResponse(BaseModel):
     mensagem: str
     pontos_ganhos: int
     total_pontos_atual: int
     monumento: str
     brinde_desbloqueado: Optional[str] = None
+    missoes_concluidas: List[MissaoConcluidaResumo] = []
 
 
 # SCHEMAS DE INVENTÁRIO E BRINDES
@@ -160,11 +165,13 @@ class ProgressoTrilha(BaseModel):
 
 class MissaoResponse(BaseModel):
     id_missao: int
+    titulo: str
     descricao_missao: str
-    tipo_missao: Optional[str] = None
-    raio_metros: int
+    tipo_regra: str
+    pontos_recompensa: int
     concluida: bool
-
+    progresso: int
+    total: int
 
 class PosicaoUsuario(BaseModel):
     latitude: float = Field(ge=-90, le=90)
