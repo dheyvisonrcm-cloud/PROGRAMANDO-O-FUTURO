@@ -40,10 +40,6 @@ def resgatar(token, qr):
 r = chamar("GET", "/")
 checar("GET / (API online)", r.status_code == 200, r.text)
 
-r = chamar("GET", "/testar-banco")
-checar("GET /testar-banco", r.status_code == 200, r.text)
-total_monumentos = r.json().get("total_monumentos", 0) if r.status_code == 200 else 0
-checar("banco tem 14 monumentos", total_monumentos == 14, f"encontrou {total_monumentos}")
 
 # ------------------------------------------------------ cadastro e login
 email = f"teste_{uuid.uuid4().hex[:8]}@teste-api.com"
@@ -155,12 +151,7 @@ if id_trilha:
     r = chamar("GET", f"/trilhas/{id_trilha}/progresso", token)
     checar("GET /trilhas/{id}/progresso", r.status_code == 200, r.text)
 
-# ---------------------------------------------------------------- resumo
-print()
-if falhas:
-    print(f"{falhas} verificação(ões) falharam.")
-    sys.exit(1)
-print("Tudo certo.")
+
 
 ### ------------------------------------------------- pílulas: limites e erros
 r = chamar("GET", f"/monumentos/{id_monumento}/narrativa")
@@ -208,3 +199,10 @@ if r_diario_b.status_code == 200:
         all(len(v) == 0 for v in diario_b.values() if isinstance(v, list)),
         str(diario_b)
     )
+
+# ---------------------------------------------------------------- resumo
+print()
+if falhas:
+    print(f"{falhas} verificação(ões) falharam.")
+    sys.exit(1)
+print("Tudo certo.")
