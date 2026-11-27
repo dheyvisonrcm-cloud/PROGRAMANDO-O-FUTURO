@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>RecGo — Guia Turístico Gamificado com IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --petrol: #0F3B4C;
+      --petrol-dark: #092632;
+      --solar: #F59E0B;
+      --solar-dark: #D97706;
+      --cream: #FAF7EE;
+      --cream-card: #FFFFFF;
+      --colonial: #1E7E6E;
+      --terracotta: #C83E37;
+      --text-main: #0F3B4C;
+      --text-muted: #526B75;
+      --border: #E5DFD0;
+      --shadow: 0 8px 24px rgba(15, 59, 76, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #16262E;
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    h1, h2, h3, h4, .brand-font { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    .app-shell {
+      width: 100%;
+      max-width: 440px;
+      min-height: 100vh;
+      background: var(--cream);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+      overflow-x: hidden;
+    }
+
+    /* Banners de estado (Cold start / Offline / Erros) */
+    .status-banner {
+      display: none;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      align-items: center;
+      gap: 8px;
+      z-index: 1200;
+    }
+    .status-banner.show { display: flex; }
+    .status-banner.cold { background: #FEF3C7; color: #92400E; border-bottom: 1px solid #FDE68A; }
+    .status-banner.error { background: #FEE2E2; color: #991B1B; border-bottom: 1px solid #FECACA; }
+    .status-banner.success { background: #D1FAE5; color: #065F46; border-bottom: 1px solid #A7F3D0; }
+
+    /* Gerenciamento de telas */
+    .screen { display: none; flex: 1; flex-direction: column; padding-bottom: 84px; animation: fadeIn 0.22s ease; }
+    .screen.active { display: flex; }
+    .screen.no-nav { padding-bottom: 24px; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Auth (Telas 01 e 02) */
+    .auth-header {
+      background: linear-gradient(155deg, var(--petrol) 0%, var(--petrol-dark) 100%);
+      color: var(--cream);
+      padding: 40px 24px 36px;
+      border-bottom-left-radius: 28px;
+      border-bottom-right-radius: 28px;
+      text-align: center;
+    }
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(245, 158, 11, 0.16);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: var(--solar);
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .brand-title { font-size: 38px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+    .brand-title span { color: var(--solar); }
+    .brand-sub { font-size: 14px; color: #CBD5E1; margin-top: 8px; }
+
+    .auth-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #EDE7D7;
+      padding: 4px;
+      border-radius: 14px;
+    }
+    .auth-tab {
+      border: none;
+      background: transparent;
+      padding: 10px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .auth-tab.active { background: var(--cream-card); color: var(--petrol); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    .field-group label { font-size: 13px; font-weight: 600; color: var(--petrol); }
+    .input-box {
+      width: 100%;
+      padding: 13px 14px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: var(--cream-card);
+      font-size: 15px;
+      color: var(--petrol);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-box:focus { border-color: var(--solar); }
+
+    .btn {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 14px;
+      border: none;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.12s, opacity 0.2s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary { background: var(--solar); color: var(--petrol-dark); box-shadow: 0 6px 16px rgba(245, 158, 11, 0.28); }
+    .btn-petrol { background: var(--petrol); color: var(--cream); }
+    .btn-colonial { background: var(--colonial); color: #FFFFFF; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--petrol); color: var(--petrol); }
+    .btn-ghost { background: #EDE7D7; color: var(--petrol); }
+
+    .google-disabled {
+      opacity: 0.55;
+      background: #F1F5F9;
+      color: #64748B;
+      border: 1px dashed #CBD5E1;
+      font-size: 13px;
+      cursor: not-allowed;
+    }
+
+    /* Top Bar (Tela 03) */
+    .top-bar {
+      background: var(--petrol);
+      color: var(--cream);
+      padding: 16px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .greeting small { display: block; font-size: 12px; color: #94A3B8; }
+    .greeting strong { font-size: 17px; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .xp-pill {
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid var(--solar);
+      color: var(--solar);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Controles do Mapa */
+    .map-toolbar {
+      padding: 12px 16px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: var(--cream);
+      border-bottom: 1px solid var(--border);
+    }
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: var(--cream-card);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--petrol);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .chip.active { background: var(--petrol); color: var(--cream); border-color: var(--petrol); }
+
+    .view-switch {
+      margin-left: auto;
+      display: flex;
+      background: #EDE7D7;
+      padding: 3px;
+      border-radius: 999px;
+    }
+    .view-switch button {
+      border: none;
+      background: transparent;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .view-switch button.active { background: var(--cream-card); color: var(--petrol); }
+
+    #map { width: 100%; height: 360px; z-index: 1; }
+
+    .selected-spot-card {
+      margin: 12px 16px 0;
+      background: var(--cream-card);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .spot-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #E6F4F1;
+      color: var(--colonial);
+      margin-bottom: 6px;
+    }
+    .spot-tag.near { background: #FEF3C7; color: var(--solar-dark); }
+
+    .list-container { padding: 14px 16px; display: none; flex-direction: column; gap: 12px; }
+    .list-container.active { display: flex; }
+
+    .monument-item {
+      background: var(--cream-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    /* Cabeçalho interno (Telas 04 a 07) */
+    .sub-header {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--cream);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--cream-card);
+      color: var(--petrol);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .icon-btn.fav-active { background: #FEE2E2; border-color: var(--terracotta); color: var(--terracotta); }
+
+    .content-pad { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+
+    /* Prévia do Local (Tela 04) */
+    .hero-banner {
+      height: 185px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, var(--petrol) 0%, var(--colonial) 100%);
+      color: var(--cream);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      position: relative;
+      overflow: hidden;
+    }
+    .xp-badge-lg {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: var(--solar);
+      color: var(--petrol-dark);
+      font-weight: 800;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 999px;
+    }
+
+    /* História / Pílula (
