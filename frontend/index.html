@@ -331,4 +331,1280 @@
       border-radius: 999px;
     }
 
-    /* História / Pílula (
+    /* História / Pílula (Tela 05) */
+    .lore-card {
+      background: var(--cream-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+    .layer-pills { display: flex; gap: 6px; margin-bottom: 12px; }
+    .layer-dot {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #EDE7D7;
+      color: var(--text-muted);
+    }
+    .layer-dot.active { background: var(--petrol); color: var(--cream); }
+
+    details.sources-box {
+      background: #F4EFE2;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    details.sources-box summary { font-weight: 700; color: var(--petrol); cursor: pointer; }
+
+    /* Desafio e QR Code (Tela 06) */
+    .challenge-box {
+      background: #FFFBEB;
+      border: 1.5px solid #FDE68A;
+      border-radius: 18px;
+      padding: 18px;
+    }
+    #qr-reader {
+      width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #092632;
+      min-height: 220px;
+    }
+
+    /* Recompensa (Tela 07) */
+    .reward-hero {
+      text-align: center;
+      padding: 28px 20px;
+      background: linear-gradient(165deg, var(--petrol) 0%, var(--colonial) 100%);
+      color: var(--cream);
+      border-radius: 24px;
+    }
+    .brinde-circle {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.14);
+      border: 3px solid var(--solar);
+      margin: 0 auto 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .brinde-circle img { width: 100%; height: 100%; object-fit: cover; }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: #E2E8F0;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-fill { height: 100%; background: var(--solar); border-radius: 999px; transition: width 0.4s ease; }
+
+    /* Conquistas & Perfil (Telas 08 e 09) */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .stat-card {
+      background: var(--cream-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+    .stat-card strong { display: block; font-size: 20px; color: var(--petrol); font-family: 'Plus Jakarta Sans', sans-serif; }
+    .stat-card span { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+
+    .card-box {
+      background: var(--cream-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .badges-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .badge-item {
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-width: 440px;
+      background: var(--cream-card);
+      border-top: 1px solid var(--border);
+      display: none;
+      grid-template-columns: repeat(3, 1fr);
+      padding: 8px 0 12px;
+      z-index: 1000;
+    }
+    .bottom-nav.show { display: grid; }
+    .nav-btn {
+      border: none;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .nav-btn.active { color: var(--petrol); }
+    .nav-btn.active svg { color: var(--solar-dark); }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2.5px solid rgba(15, 59, 76, 0.25);
+      border-top-color: var(--petrol);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Banners globais de rede / Render Cold Start / Alertas -->
+    <div id="coldBanner" class="status-banner cold">
+      <div class="spinner"></div>
+      <span>Acordando o servidor do RecGo no Render... aguarde alguns segundos.</span>
+    </div>
+    <div id="alertBanner" class="status-banner error">
+      <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
+      <span id="alertText">Mensagem</span>
+    </div>
+
+    <!-- =========================================================
+         TELAS 01 & 02: ACESSO À CIDADE (CADASTRO & LOGIN JWT)
+    ========================================================== -->
+    <section id="screen-auth" class="screen no-nav active">
+      <div class="auth-header">
+        <div class="logo-badge"><i data-lucide="compass" style="width:14px;height:14px;"></i> RECIFE • OLINDA</div>
+        <h1 class="brand-title">Rec<span>GO</span></h1>
+        <p class="brand-sub">Explore. Aprenda. Descubra a história viva.</p>
+      </div>
+
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Entrar</button>
+          <button id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Criar conta</button>
+        </div>
+
+        <form id="authForm" onsubmit="handleAuthSubmit(event)" style="display:flex;flex-direction:column;gap:14px;">
+          <div id="nameFieldGroup" class="field-group" style="display:none;">
+            <label for="inputNome">Como você quer ser chamado?</label>
+            <input id="inputNome" class="input-box" type="text" placeholder="Ex.: Dheyvison" />
+          </div>
+
+          <div class="field-group">
+            <label for="inputEmail">E-mail</label>
+            <input id="inputEmail" class="input-box" type="email" required placeholder="voce@exemplo.com" />
+          </div>
+
+          <div class="field-group">
+            <label for="inputSenha">Senha (6 a 72 caracteres)</label>
+            <input id="inputSenha" class="input-box" type="password" minlength="6" maxlength="72" required placeholder="••••••" />
+          </div>
+
+          <button id="authSubmitBtn" type="submit" class="btn btn-primary">
+            <i data-lucide="log-in" style="width:18px;height:18px;"></i>
+            <span id="authSubmitText">Entrar na cidade</span>
+          </button>
+        </form>
+
+        <button type="button" class="btn google-disabled" disabled title="Disponível após o MVP">
+          Continuar com Google (Em breve no MVP)
+        </button>
+
+        <div style="text-align:center;margin-top:4px;">
+          <button type="button" onclick="enterDemoMode()" style="background:none;border:none;color:var(--colonial);font-weight:700;font-size:13px;text-decoration:underline;cursor:pointer;">
+            Testar em Modo Demonstração (Offline / Sem API)
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         TELA 03: MAPA INTERATIVO & LISTA DE MONUMENTOS
+    ========================================================== -->
+    <section id="screen-map" class="screen">
+      <div class="top-bar">
+        <div class="greeting">
+          <small>Explorador(a)</small>
+          <strong id="userGreeting">Olá, Viajante!</strong>
+        </div>
+        <div class="xp-pill">
+          <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
+          <span id="headerLevelXp">Nível 1 • 0 XP</span>
+        </div>
+      </div>
+
+      <div class="map-toolbar">
+        <button id="btnNearMe" class="chip" onclick="toggleNearFilter()">
+          <i data-lucide="navigation" style="width:13px;height:13px;"></i>
+          Perto de mim (&lt;200m)
+        </button>
+        <div class="view-switch">
+          <button id="btnViewMap" class="active" onclick="switchMapView('map')">Mapa</button>
+          <button id="btnViewList" onclick="switchMapView('list')">Lista</button>
+        </div>
+      </div>
+
+      <div id="mapWrapper">
+        <div id="map"></div>
+        <div id="selectedSpotCard" class="selected-spot-card">
+          <span id="spotDistanceTag" class="spot-tag">Selecione um pino no mapa</span>
+          <h3 id="spotTitle" style="font-size:18px;margin-bottom:4px;">Pronto para explorar?</h3>
+          <p id="spotDesc" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+            Toque em qualquer marcador histórico de Recife ou Olinda para ver a prévia e desbloquear histórias com IA.
+          </p>
+          <button id="btnOpenPreview" class="btn btn-primary" disabled onclick="openSpotPreview()">
+            Ver prévia do local
+          </button>
+        </div>
+      </div>
+
+      <div id="monumentsList" class="list-container"></div>
+    </section>
+
+    <!-- =========================================================
+         TELA 04: PRÉVIA DO LOCAL
+    ========================================================== -->
+    <section id="screen-preview" class="screen no-nav">
+      <div class="sub-header">
+        <button class="icon-btn" onclick="goToScreen('screen-map')" aria-label="Voltar">
+          <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+        </button>
+        <strong style="font-size:15px;">Prévia do Monumento</strong>
+        <button id="btnFavToggle" class="icon-btn" onclick="toggleFavorite()" aria-label="Favoritar">
+          <i data-lucide="heart" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div class="content-pad">
+        <div class="hero-banner">
+          <span class="xp-badge-lg">+50 XP + Brinde</span>
+          <small id="previewCity" style="opacity:0.85;font-weight:600;">Recife • PE</small>
+          <h2 id="previewTitle" style="font-size:22px;line-height:1.2;margin-top:4px;">Nome do Monumento</h2>
+        </div>
+
+        <div class="card-box">
+          <h4 style="font-size:14px;margin-bottom:6px;">Sobre este patrimônio</h4>
+          <p id="previewDesc" style="font-size:14px;color:var(--text-muted);line-height:1.6;"></p>
+        </div>
+
+        <div class="card-box" style="display:flex;align-items:center;gap:12px;background:#F4EFE2;">
+          <i data-lucide="qr-code" style="width:28px;height:28px;color:var(--petrol);flex-shrink:0;"></i>
+          <div style="font-size:12px;color:var(--text-muted);">
+            <strong style="color:var(--petrol);display:block;">Validação Presencial</strong>
+            Leia a pílula histórica gerada por IA e escaneie o QR Code físico no local para registrar sua conquista.
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="startDiscovery()">
+          <i data-lucide="compass" style="width:18px;height:18px;"></i>
+          Começar descoberta
+        </button>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         TELA 05: HISTÓRIA (PÍLULA DE LORE COM IA)
+    ========================================================== -->
+    <section id="screen-story" class="screen no-nav">
+      <div class="sub-header">
+        <button class="icon-btn" onclick="goToScreen('screen-preview')" aria-label="Voltar">
+          <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+        </button>
+        <strong style="font-size:15px;">Pílula de História</strong>
+        <button id="btnSaveLore" class="icon-btn" onclick="saveCurrentLore()" aria-label="Salvar no diário">
+          <i data-lucide="bookmark" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div class="content-pad">
+        <div class="lore-card">
+          <div class="layer-pills">
+            <span id="loreVariantBadge" class="layer-dot active">Camada 1 de 3</span>
+            <span class="layer-dot" style="background:#FEF3C7;color:#92400E;">IA Curada</span>
+          </div>
+          <h3 id="loreMonumentName" style="font-size:18px;margin-bottom:10px;"></h3>
+          <p id="loreText" style="color:var(--petrol);">Carregando narrativa histórica...</p>
+        </div>
+
+        <details class="sources-box">
+          <summary>Fontes e curadoria desta história</summary>
+          <p style="margin-top:8px;line-height:1.5;">
+            Narrativa gerada por IA a partir de acervos patrimoniais do IPHAN, Prefeitura do Recife e Prefeitura de Olinda, validada pela curadoria educacional do RecGo.
+          </p>
+        </details>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button id="btnNextLayer" class="btn btn-ghost" onclick="loadNextLoreVariant()">
+            <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+            Próxima camada
+          </button>
+          <button class="btn btn-colonial" onclick="openChallengeScreen()">
+            Ir para desafio
+            <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         TELA 06: DESAFIO DE OBSERVAÇÃO & SCANNER QR CODE
+    ========================================================== -->
+    <section id="screen-challenge" class="screen no-nav">
+      <div class="sub-header">
+        <button class="icon-btn" onclick="closeChallengeScreen()" aria-label="Voltar">
+          <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+        </button>
+        <strong style="font-size:15px;">Desafio &amp; Check-in QR</strong>
+        <div style="width:38px;"></div>
+      </div>
+
+      <div class="content-pad">
+        <div class="challenge-box">
+          <span class="spot-tag near">Missão de Observação</span>
+          <h3 style="font-size:16px;margin-bottom:6px;">Observe o monumento ao seu redor:</h3>
+          <p id="challengeText" style="font-size:14px;line-height:1.55;color:var(--petrol);"></p>
+        </div>
+
+        <div class="card-box">
+          <h4 style="font-size:14px;margin-bottom:8px;">1. Confirme sua observação</h4>
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;">
+            <input id="chkObservation" type="checkbox" style="margin-top:3px;width:16px;height:16px;accent-color:var(--colonial);" />
+            <span>Estou no local e concluí o desafio de observação acima.</span>
+          </label>
+        </div>
+
+        <div class="card-box">
+          <h4 style="font-size:14px;margin-bottom:8px;">2. Escaneie o QR Code do monumento</h4>
+          <div id="qr-reader"></div>
+          <button id="btnToggleCamera" type="button" class="btn btn-petrol" style="margin-top:10px;" onclick="toggleQrCamera()">
+            <i data-lucide="camera" style="width:17px;height:17px;"></i>
+            <span id="btnCameraLabel">Ativar câmera traseira</span>
+          </button>
+
+          <div style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);">
+            <label for="manualQrInput" style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;">
+              Ou digite o código do QR Code manualmente:
+            </label>
+            <div style="display:flex;gap:8px;">
+              <input id="manualQrInput" class="input-box" type="text" placeholder="Ex.: RECGO-MARCO-ZERO" style="padding:10px 12px;font-size:13px;" />
+              <button type="button" class="btn btn-primary" style="width:auto;padding:10px 16px;" onclick="submitManualQr()">
+                Validar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         TELA 07: RECOMPENSA DESBLOQUEADA
+    ========================================================== -->
+    <section id="screen-reward" class="screen no-nav">
+      <div class="content-pad" style="padding-top:28px;">
+        <div class="reward-hero">
+          <div id="rewardBrindeIcon" class="brinde-circle">
+            <i data-lucide="award" style="width:40px;height:40px;color:var(--solar);"></i>
+          </div>
+          <span class="logo-badge" style="margin-bottom:8px;">DESCOBERTA REGISTRADA</span>
+          <h2 style="font-size:26px;">Muito bem!</h2>
+          <p id="rewardMsg" style="font-size:14px;opacity:0.9;margin-top:6px;">Você desbloqueou um novo patrimônio histórico.</p>
+          <div style="margin-top:16px;font-size:28px;font-weight:800;color:var(--solar);" id="rewardXpGained">+50 XP</div>
+          <div id="rewardBrindeName" style="font-size:13px;font-weight:700;margin-top:4px;"></div>
+        </div>
+
+        <div id="rewardMissionsBox" class="card-box" style="display:none;background:#ECFDF5;border-color:#6EE7B7;">
+          <strong style="color:#065F46;font-size:14px;display:block;margin-bottom:4px;">Missão Concluída!</strong>
+          <div id="rewardMissionsList" style="font-size:13px;color:#047857;"></div>
+        </div>
+
+        <div class="card-box">
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;">
+            <span id="rewardLevelLabel">Nível 1</span>
+            <span id="rewardTotalXpLabel">50 XP</span>
+          </div>
+          <div class="progress-track">
+            <div id="rewardProgressFill" class="progress-fill" style="width:50%;"></div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="goToScreen('screen-map')">Voltar ao mapa</button>
+        <button class="btn btn-outline" onclick="goToScreen('screen-achievements')">Ver minhas conquistas</button>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         TELA 08: CONQUISTAS, TRILHAS E MISSÕES
+    ========================================================== -->
+    <section id="screen-achievements" class="screen">
+      <div class="top-bar">
+        <div class="greeting">
+          <small>Sua jornada</small>
+          <strong>Conquistas &amp; Trilhas</strong>
+        </div>
+        <div class="xp-pill" id="achLevelBadge">Nível 1</div>
+      </div>
+
+      <div class="content-pad">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <strong id="statPlaces">0</strong>
+            <span>Lugares</span>
+          </div>
+          <div class="stat-card">
+            <strong id="statBrindes">0</strong>
+            <span>Selos</span>
+          </div>
+          <div class="stat-card">
+            <strong id="statXp">0</strong>
+            <span>XP Total</span>
+          </div>
+        </div>
+
+        <div class="card-box">
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;">
+            <span id="achLevelText">Nível 1 — Explorador Iniciante</span>
+            <span id="achNextLevelXp">0 / 100 XP</span>
+          </div>
+          <div class="progress-track">
+            <div id="achLevelFill" class="progress-fill" style="width:0%;"></div>
+          </div>
+        </div>
+
+        <div class="card-box">
+          <h3 style="font-size:15px;">Selos Colecionados</h3>
+          <div id="badgesGrid" class="badges-grid"></div>
+        </div>
+
+        <div class="card-box">
+          <h3 style="font-size:15px;margin-bottom:10px;">Trilhas Temáticas</h3>
+          <div id="trailsList" style="display:flex;flex-direction:column;gap:12px;"></div>
+        </div>
+
+        <div class="card-box">
+          <h3 style="font-size:15px;margin-bottom:10px;">Missões Ativas</h3>
+          <div id="missionsList" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         TELA 09: PERFIL & DIÁRIO DO EXPLORADOR
+    ========================================================== -->
+    <section id="screen-profile" class="screen">
+      <div class="top-bar">
+        <div class="greeting">
+          <small>Conta &amp; Diário</small>
+          <strong id="profileName">Explorador</strong>
+        </div>
+        <button onclick="logout()" style="background:rgba(255,255,255,0.12);border:none;color:var(--cream);padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
+          Sair
+        </button>
+      </div>
+
+      <div class="content-pad">
+        <div class="card-box" style="display:flex;align-items:center;gap:14px;">
+          <div style="width:52px;height:52px;border-radius:50%;background:var(--petrol);color:var(--solar);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;" id="profileAvatar">
+            R
+          </div>
+          <div>
+            <strong id="profileFullName" style="font-size:16px;display:block;">Explorador RecGo</strong>
+            <span id="profileEmail" style="font-size:13px;color:var(--text-muted);">email@exemplo.com</span>
+          </div>
+        </div>
+
+        <div class="card-box">
+          <h3 style="font-size:15px;margin-bottom:10px;">Monumentos Favoritos</h3>
+          <div id="favoritesList" style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-muted);">
+            Nenhum favorito salvo ainda.
+          </div>
+        </div>
+
+        <div class="card-box">
+          <h3 style="font-size:15px;margin-bottom:10px;">Diário de Histórias Salvas</h3>
+          <div id="savedNarrativesList" style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--text-muted);">
+            Nenhuma pílula histórica salva no diário.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         BARRA INFERIOR GLOBAL (MAPA | CONQUISTAS | PERFIL)
+    ========================================================== -->
+    <nav id="bottomNav" class="bottom-nav">
+      <button id="nav-map" class="nav-btn active" onclick="goToScreen('screen-map')">
+        <i data-lucide="map-pin" style="width:20px;height:20px;"></i>
+        <span>Mapa</span>
+      </button>
+      <button id="nav-achievements" class="nav-btn" onclick="goToScreen('screen-achievements')">
+        <i data-lucide="trophy" style="width:20px;height:20px;"></i>
+        <span>Conquistas</span>
+      </button>
+      <button id="nav-profile" class="nav-btn" onclick="goToScreen('screen-profile')">
+        <i data-lucide="user" style="width:20px;height:20px;"></i>
+        <span>Perfil</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    const API_BASE_URL = "https://programando-o-futuro-6zpg.onrender.com";
+
+    const state = {
+      authMode: "login",
+      demoMode: false,
+      user: null,
+      monuments: [],
+      selectedMonument: null,
+      currentLore: null,
+      favorites: [],
+      savedNarratives: [],
+      trails: [],
+      missions: [],
+      nearOnly: false,
+      userCoords: null,
+      map: null,
+      markersLayer: null,
+      userMarker: null,
+      html5Qr: null,
+      cameraRunning: false
+    };
+
+    // Dados fallback caso o usuário clique em "Modo Demonstração"
+    const DEMO_MONUMENTS = [
+      { id_monumento: 1, nome: "Praça do Marco Zero", cidade: "Recife", latitude: -8.0631, longitude: -34.8711, descricao: "Ponto zero das estradas de Pernambuco e coração histórico do Recife Antigo, emoldurado pela Rosa dos Ventos de Cícero Dias." },
+      { id_monumento: 2, nome: "Torre Malakoff", cidade: "Recife", latitude: -8.0608, longitude: -34.8705, descricao: "Antigo observatório astronômico e portão monumental do Arsenal da Marinha, inspirado na fortaleza de Sebastopol." },
+      { id_monumento: 3, nome: "Alto da Sé", cidade: "Olinda", latitude: -8.0147, longitude: -34.8492, descricao: "Mirante histórico de Olinda com vista panorâmica para o Recife, cercado por igrejas seculares e tapiocas tradicionais." }
+    ];
+
+    // =========================================================
+    // HELPER HTTP CENTRALIZADO (JWT + COLD START + ERROS)
+    // =========================================================
+    async function apiFetch(path, options = {}) {
+      const token = localStorage.getItem("access_token");
+      const headers = {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const coldTimer = setTimeout(() => {
+        document.getElementById("coldBanner").classList.add("show");
+      }, 2500);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+        clearTimeout(coldTimer);
+        document.getElementById("coldBanner").classList.remove("show");
+
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("access_token");
+          showAlert("Sua sessão expirou. Faça login novamente.", "error");
+          goToScreen("screen-auth");
+          throw new Error("Sessão expirada");
+        }
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          const msg = Array.isArray(data.detail)
+            ? data.detail.map(e => e.msg).join(", ")
+            : (data.detail || `Erro HTTP ${response.status}`);
+          throw new Error(msg);
+        }
+        return data;
+      } catch (err) {
+        clearTimeout(coldTimer);
+        document.getElementById("coldBanner").classList.remove("show");
+        if (err.message === "Failed to fetch") {
+          throw new Error("Sem conexão com o servidor. Verifique sua internet (operação 100% online).");
+        }
+        throw err;
+      }
+    }
+
+    function showAlert(message, type = "error") {
+      const banner = document.getElementById("alertBanner");
+      banner.className = `status-banner ${type} show`;
+      document.getElementById("alertText").textContent = message;
+      setTimeout(() => banner.classList.remove("show"), 4500);
+    }
+
+    // =========================================================
+    // NAVEGAÇÃO ENTRE AS 9 TELAS
+    // =========================================================
+    function goToScreen(screenId) {
+      if (state.cameraRunning && screenId !== "screen-challenge") {
+        stopQrCamera();
+      }
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById(screenId).classList.add("active");
+
+      const navScreens = ["screen-map", "screen-achievements", "screen-profile"];
+      const bottomNav = document.getElementById("bottomNav");
+      if (navScreens.includes(screenId)) {
+        bottomNav.classList.add("show");
+        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+        if (screenId === "screen-map") document.getElementById("nav-map").classList.add("active");
+        if (screenId === "screen-achievements") {
+          document.getElementById("nav-achievements").classList.add("active");
+          loadAchievementsData();
+        }
+        if (screenId === "screen-profile") {
+          document.getElementById("nav-profile").classList.add("active");
+          loadProfileData();
+        }
+      } else {
+        bottomNav.classList.remove("show");
+      }
+
+      if (screenId === "screen-map" && state.map) {
+        setTimeout(() => state.map.invalidateSize(), 150);
+      }
+    }
+
+    // =========================================================
+    // TELAS 01 & 02: AUTENTICAÇÃO (CADASTRO & LOGIN)
+    // =========================================================
+    function switchAuthTab(mode) {
+      state.authMode = mode;
+      document.getElementById("tabLogin").classList.toggle("active", mode === "login");
+      document.getElementById("tabRegister").classList.toggle("active", mode === "register");
+      const nameGroup = document.getElementById("nameFieldGroup");
+      const nameInput = document.getElementById("inputNome");
+      if (mode === "register") {
+        nameGroup.style.display = "flex";
+        nameInput.required = true;
+        document.getElementById("authSubmitText").textContent = "Criar conta e explorar";
+      } else {
+        nameGroup.style.display = "none";
+        nameInput.required = false;
+        document.getElementById("authSubmitText").textContent = "Entrar na cidade";
+      }
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById("authSubmitBtn");
+      const nome = document.getElementById("inputNome").value.trim();
+      const email = document.getElementById("inputEmail").value.trim();
+      const senha = document.getElementById("inputSenha").value;
+
+      if (senha.length < 6 || senha.length > 72) {
+        showAlert("A senha deve ter entre 6 e 72 caracteres.", "error");
+        return;
+      }
+
+      btn.disabled = true;
+      try {
+        if (state.authMode === "register") {
+          await apiFetch("/cadastrar", {
+            method: "POST",
+            body: JSON.stringify({ nome, email, senha })
+          });
+          showAlert("Conta criada com sucesso! Entrando...", "success");
+        }
+
+        const loginData = await apiFetch("/login", {
+          method: "POST",
+          body: JSON.stringify({ email, senha })
+        });
+
+        localStorage.setItem("access_token", loginData.access_token);
+        state.demoMode = false;
+        await bootstrapApp();
+      } catch (err) {
+        showAlert(err.message, "error");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function enterDemoMode() {
+      state.demoMode = true;
+      state.user = {
+        id_usuario: 99,
+        nome: "Explorador Demo",
+        email: "demo@recgo.app",
+        pontos_totais: 150,
+        monumentos_conquistados: [1],
+        brindes: [{ nome: "Selo Marco Zero", imagem_url: "" }]
+      };
+      state.monuments = DEMO_MONUMENTS;
+      updateUserHeader();
+      goToScreen("screen-map");
+      initMap();
+      renderMonuments();
+    }
+
+    function logout() {
+      localStorage.removeItem("access_token");
+      state.user = null;
+      state.demoMode = false;
+      goToScreen("screen-auth");
+    }
+
+    async function bootstrapApp() {
+      try {
+        const [me, monuments, favs] = await Promise.all([
+          apiFetch("/usuarios/me"),
+          apiFetch("/monumentos"),
+          apiFetch("/favoritos").catch(() => [])
+        ]);
+        state.user = me;
+        state.monuments = monuments;
+        state.favorites = Array.isArray(favs) ? favs : [];
+        updateUserHeader();
+        goToScreen("screen-map");
+        initMap();
+        renderMonuments();
+        startGeolocation();
+      } catch (err) {
+        showAlert(err.message, "error");
+      }
+    }
+
+    function updateUserHeader() {
+      if (!state.user) return;
+      const xp = state.user.pontos_totais || 0;
+      const level = Math.floor(xp / 100) + 1;
+      const firstName = (state.user.nome || "Viajante").split(" ")[0];
+      document.getElementById("userGreeting").textContent = `Olá, ${firstName}!`;
+      document.getElementById("headerLevelXp").textContent = `Nível ${level} • ${xp} XP`;
+    }
+
+    // =========================================================
+    // TELA 03: MAPA INTERATIVO (LEAFLET) & GEOLOCALIZAÇÃO
+    // =========================================================
+    function initMap() {
+      if (state.map) return;
+      state.map = L.map("map", { zoomControl: false }).setView([-8.0476, -34.8770], 13);
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+        attribution: "&copy; OpenStreetMap"
+      }).addTo(state.map);
+      state.markersLayer = L.layerGroup().addTo(state.map);
+    }
+
+    function startGeolocation() {
+      if (!("geolocation" in navigator)) return;
+      navigator.geolocation.watchPosition(
+        (pos) => {
+          state.userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          if (state.map) {
+            if (!state.userMarker) {
+              state.userMarker = L.circleMarker([state.userCoords.lat, state.userCoords.lng], {
+                radius: 8, fillColor: "#2563EB", color: "#FFFFFF", weight: 2, fillOpacity: 0.9
+              }).addTo(state.map).bindPopup("Você está aqui");
+            } else {
+              state.userMarker.setLatLng([state.userCoords.lat, state.userCoords.lng]);
+            }
+          }
+          renderMonuments();
+        },
+        () => { /* GPS negado: segue navegável sem bloqueio */ },
+        { enableHighAccuracy: true }
+      );
+    }
+
+    function haversineMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const toRad = d => d * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function toggleNearFilter() {
+      state.nearOnly = !state.nearOnly;
+      document.getElementById("btnNearMe").classList.toggle("active", state.nearOnly);
+      if (state.nearOnly && !state.userCoords) {
+        showAlert("Ative o GPS no navegador para filtrar monumentos a menos de 200m.", "cold");
+      }
+      renderMonuments();
+    }
+
+    function switchMapView(mode) {
+      document.getElementById("btnViewMap").classList.toggle("active", mode === "map");
+      document.getElementById("btnViewList").classList.toggle("active", mode === "list");
+      document.getElementById("mapWrapper").style.display = mode === "map" ? "block" : "none";
+      document.getElementById("monumentsList").classList.toggle("active", mode === "list");
+      if (mode === "map" && state.map) setTimeout(() => state.map.invalidateSize(), 100);
+    }
+
+    function renderMonuments() {
+      if (state.markersLayer) state.markersLayer.clearLayers();
+      const listEl = document.getElementById("monumentsList");
+      listEl.innerHTML = "";
+
+      const filtered = state.monuments.filter(m => {
+        if (!state.nearOnly || !state.userCoords) return true;
+        return haversineMeters(state.userCoords.lat, state.userCoords.lng, m.latitude, m.longitude) <= 200;
+      });
+
+      filtered.forEach(m => {
+        const dist = state.userCoords
+          ? Math.round(haversineMeters(state.userCoords.lat, state.userCoords.lng, m.latitude, m.longitude))
+          : null;
+        const isNear = dist !== null && dist <= 200;
+
+        if (state.markersLayer) {
+          const pin = L.circleMarker([m.latitude, m.longitude], {
+            radius: isNear ? 11 : 9,
+            fillColor: isNear ? "#F59E0B" : "#0F3B4C",
+            color: "#FFFFFF",
+            weight: 2.5,
+            fillOpacity: 1
+          }).addTo(state.markersLayer);
+
+          pin.on("click", () => selectMonument(m, dist));
+        }
+
+        const item = document.createElement("div");
+        item.className = "monument-item";
+        item.innerHTML = `
+          <div>
+            <span class="spot-tag ${isNear ? "near" : ""}">${m.cidade}${dist !== null ? ` • ${dist}m` : ""}</span>
+            <h4 style="font-size:15px;">${m.nome}</h4>
+            <p style="font-size:12px;color:var(--text-muted);margin-top:2px;">${(m.descricao || "").slice(0, 75)}...</p>
+          </div>
+          <i data-lucide="chevron-right" style="width:20px;height:20px;color:var(--petrol);flex-shrink:0;"></i>
+        `;
+        item.onclick = () => {
+          selectMonument(m, dist);
+          openSpotPreview();
+        };
+        listEl.appendChild(item);
+      });
+
+      lucide.createIcons();
+    }
+
+    function selectMonument(monument, dist) {
+      state.selectedMonument = monument;
+      const tag = document.getElementById("spotDistanceTag");
+      tag.textContent = dist !== null ? `${monument.cidade} • a ${dist}m de você` : monument.cidade;
+      tag.className = `spot-tag ${dist !== null && dist <= 200 ? "near" : ""}`;
+      document.getElementById("spotTitle").textContent = monument.nome;
+      document.getElementById("spotDesc").textContent = monument.descricao || "Explore este marco histórico.";
+      document.getElementById("btnOpenPreview").disabled = false;
+    }
+
+    // =========================================================
+    // TELA 04: PRÉVIA DO LOCAL & FAVORITOS
+    // =========================================================
+    function openSpotPreview() {
+      const m = state.selectedMonument;
+      if (!m) return;
+      document.getElementById("previewCity").textContent = `${m.cidade} • PE`;
+      document.getElementById("previewTitle").textContent = m.nome;
+      document.getElementById("previewDesc").textContent = m.descricao || "";
+      updateFavButtonState();
+      goToScreen("screen-preview");
+    }
+
+    function isFavorited(id) {
+      return state.favorites.some(f => (f.id_monumento || f) === id);
+    }
+
+    function updateFavButtonState() {
+      const btn = document.getElementById("btnFavToggle");
+      if (!state.selectedMonument) return;
+      btn.classList.toggle("fav-active", isFavorited(state.selectedMonument.id_monumento));
+    }
+
+    async function toggleFavorite() {
+      const m = state.selectedMonument;
+      if (!m) return;
+      const already = isFavorited(m.id_monumento);
+
+      if (state.demoMode) {
+        state.favorites = already
+          ? state.favorites.filter(f => (f.id_monumento || f) !== m.id_monumento)
+          : [...state.favorites, m];
+        updateFavButtonState();
+        return;
+      }
+
+      try {
+        if (already) {
+          await apiFetch(`/favoritos/${m.id_monumento}`, { method: "DELETE" });
+          state.favorites = state.favorites.filter(f => (f.id_monumento || f) !== m.id_monumento);
+        } else {
+          await apiFetch(`/favoritos/${m.id_monumento}`, { method: "POST" });
+          state.favorites.push(m);
+        }
+        updateFavButtonState();
+      } catch (err) {
+        showAlert(err.message, "error");
+      }
+    }
+
+    // =========================================================
+    // TELA 05: HISTÓRIA (PÍLULA DE LORE + 3 CAMADAS + SALVAR)
+    // =========================================================
+    async function startDiscovery() {
+      goToScreen("screen-story");
+      await fetchLoreVariant(null);
+    }
+
+    async function fetchLoreVariant(excludeId) {
+      const m = state.selectedMonument;
+      if (!m) return;
+      document.getElementById("loreMonumentName").textContent = m.nome;
+      document.getElementById("loreText").textContent = "Carregando camada histórica...";
+
+      if (state.demoMode) {
+        const nextVar = state.currentLore ? ((state.currentLore.variante % 3) + 1) : 1;
+        state.currentLore = {
+          id_narrativa_monumento: nextVar,
+          id_monumento: m.id_monumento,
+          variante: nextVar,
+          total_variantes: 3,
+          texto_narrativa: `Camada ${nextVar}: No coração de ${m.cidade}, o monumento ${m.nome} guarda registros fundamentais da formação cultural pernambucana, conectando arquitetura, resistência popular e memória urbana.`,
+          desafio: "Observe a fachada principal e identifique um elemento arquitetônico original da época."
+        };
+        renderLoreCard();
+        return;
+      }
+
+      try {
+        const query = excludeId ? `?excluir=${excludeId}` : "";
+        const data = await apiFetch(`/monumentos/${m.id_monumento}/narrativa${query}`);
+        state.currentLore = data;
+        renderLoreCard();
+      } catch (err) {
+        showAlert(err.message, "error");
+      }
+    }
+
+    function renderLoreCard() {
+      const lore = state.currentLore;
+      if (!lore) return;
+      document.getElementById("loreVariantBadge").textContent = `Camada ${lore.variante || 1} de ${lore.total_variantes || 3}`;
+      document.getElementById("loreText").textContent = lore.texto_narrativa;
+    }
+
+    function loadNextLoreVariant() {
+      const currentId = state.currentLore ? state.currentLore.id_narrativa_monumento : null;
+      fetchLoreVariant(currentId);
+    }
+
+    async function saveCurrentLore() {
+      if (!state.currentLore) return;
+      if (state.demoMode) {
+        state.savedNarratives.push({ ...state.currentLore, monumento_nome: state.selectedMonument.nome });
+        showAlert("História salva no seu diário!", "success");
+        return;
+      }
+      try {
+        await apiFetch(`/narrativas/${state.currentLore.id_narrativa_monumento}/salvar`, { method: "POST" });
+        showAlert("Pílula histórica salva no seu diário!", "success");
+      } catch (err) {
+        showAlert(err.message, "error");
+      }
+    }
+
+    // =========================================================
+    // TELA 06: DESAFIO DE OBSERVAÇÃO & SCANNER QR CODE
+    // =========================================================
+    function openChallengeScreen() {
+      document.getElementById("chkObservation").checked = false;
+      document.getElementById("manualQrInput").value = "";
+      document.getElementById("challengeText").textContent =
+        (state.currentLore && state.currentLore.desafio) ||
+        "Observe os detalhes históricos ao seu redor e escaneie a placa QR Code do monumento.";
+      goToScreen("screen-challenge");
+    }
+
+    function closeChallengeScreen() {
+      stopQrCamera();
+      goToScreen("screen-story");
+    }
+
+    async function toggleQrCamera() {
+      if (state.cameraRunning) {
+        await stopQrCamera();
+        return;
+      }
+      try {
+        state.html5Qr = new Html5Qrcode("qr-reader");
+        await state.html5Qr.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 210, height: 210 } },
+          async (decodedText) => {
+            await stopQrCamera();
+            await redeemQrCode(decodedText);
+          }
+        );
+        state.cameraRunning = true;
+        document.getElementById("btnCameraLabel").textContent = "Parar câmera";
+      } catch (err) {
+        showAlert("Não foi possível abrir a câmera. Use o campo de código manual abaixo.", "error");
+      }
+    }
+
+    async function stopQrCamera() {
+      if (state.html5Qr && state.cameraRunning) {
+        try { await state.html5Qr.stop(); } catch (_) {}
+      }
+      state.cameraRunning = false;
+      const lbl = document.getElementById("btnCameraLabel");
+      if (lbl) lbl.textContent = "Ativar câmera traseira";
+    }
+
+    function submitManualQr() {
+      const code = document.getElementById("manualQrInput").value.trim();
+      if (!code) {
+        showAlert("Digite o código do QR Code do monumento.", "error");
+        return;
+      }
+      redeemQrCode(code);
+    }
+
+    async function redeemQrCode(qrcodeHash) {
+      if (!document.getElementById("chkObservation").checked) {
+        showAlert("Quase lá — marque a confirmação do desafio de observação antes de validar o QR Code!", "error");
+        return;
+      }
+
+      if (state.demoMode) {
+        state.user.pontos_totais += 50;
+        updateUserHeader();
+        showRewardScreen({
+          mensagem: `Você explorou ${state.selectedMonument.nome}!`,
+          pontos_ganhos: 50,
+          total_pontos_atual: state.user.pontos_totais,
+          brinde_desbloqueado: { nome: `Selo ${state.selectedMonument.nome}`, imagem_url: "" },
+          missoes_concluidas: []
+        });
+        return;
+      }
+
+      try {
+        // Contrato SDD: NUNCA enviar id_usuario no payload; servidor extrai do JWT
+        const result = await apiFetch("/conquistas/resgatar", {
+          method: "POST",
+          body: JSON.stringify({ qrcode_hash: qrcodeHash })
+        });
+
+        const freshMe = await apiFetch("/usuarios/me");
+        state.user = freshMe;
+        updateUserHeader();
+        showRewardScreen(result);
+      } catch (err) {
+        showAlert(err.message, "error");
+      }
+    }
+
+    // =========================================================
+    // TELA 07: RECOMPENSA DESBLOQUEADA
+    // =========================================================
+    function showRewardScreen(data) {
+      document.getElementById("rewardMsg").textContent = data.mensagem || "Descoberta validada com sucesso!";
+      document.getElementById("rewardXpGained").textContent = `+${data.pontos_ganhos || 50} XP`;
+
+      const brinde = data.brinde_desbloqueado;
+      const iconContainer = document.getElementById("rewardBrindeIcon");
+      if (brinde && brinde.imagem_url) {
+        iconContainer.innerHTML = `<img src="${brinde.imagem_url}" alt="${brinde.nome}" />`;
+      } else {
+        iconContainer.innerHTML = `<i data-lucide="award" style="width:40px;height:40px;color:var(--solar);"></i>`;
+      }
+      document.getElementById("rewardBrindeName").textContent = brinde ? `Brinde: ${brinde.nome}` : "";
+
+      const missionsBox = document.getElementById("rewardMissionsBox");
+      if (Array.isArray(data.missoes_concluidas) && data.missoes_concluidas.length > 0) {
+        missionsBox.style.display = "block";
+        document.getElementById("rewardMissionsList").innerHTML = data.missoes_concluidas
+          .map(ms => `• ${ms.titulo || ms.nome} (+${ms.pontos_recompensa || 200} XP)`)
+          .join("<br/>");
+      } else {
+        missionsBox.style.display = "none";
+      }
+
+      const totalXp = data.total_pontos_atual ?? (state.user ? state.user.pontos_totais : 50);
+      const level = Math.floor(totalXp / 100) + 1;
+      const progressPct = totalXp % 100;
+      document.getElementById("rewardLevelLabel").textContent = `Nível ${level}`;
+      document.getElementById("rewardTotalXpLabel").textContent = `${totalXp} XP`;
+      document.getElementById("rewardProgressFill").style.width = `${progressPct}%`;
+
+      goToScreen("screen-reward");
+      lucide.createIcons();
+    }
+
+    // =========================================================
+    // TELA 08: CONQUISTAS, TRILHAS E MISSÕES
+    // =========================================================
+    async function loadAchievementsData() {
+      const xp = (state.user && state.user.pontos_totais) || 0;
+      const level = Math.floor(xp / 100) + 1;
+      const placesCount = (state.user && state.user.monumentos_conquistados && state.user.monumentos_conquistados.length) || 0;
+      const brindes = (state.user && state.user.brindes) || [];
+
+      document.getElementById("achLevelBadge").textContent = `Nível ${level}`;
+      document.getElementById("statPlaces").textContent = placesCount;
+      document.getElementById("statBrindes").textContent = brindes.length;
+      document.getElementById("statXp").textContent = xp;
+      document.getElementById("achLevelText").textContent = `Nível ${level} — Explorador`;
+      document.getElementById("achNextLevelXp").textContent = `${xp % 100} / 100 XP`;
+      document.getElementById("achLevelFill").style.width = `${xp % 100}%`;
+
+      const badgesGrid = document.getElementById("badgesGrid");
+      badgesGrid.innerHTML = brindes.length
+        ? brindes.map(b => `
+            <div class="badge-item">
+              ${b.imagem_url
+                ? `<img src="${b.imagem_url}" alt="${b.nome}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;margin-bottom:6px;" />`
+                : `<i data-lucide="award" style="width:26px;height:26px;color:var(--solar-dark);margin-bottom:4px;"></i>`}
+              <div>${b.nome}</div>
+            </div>`).join("")
+        : `<p style="grid-column:1/-1;font-size:12px;color:var(--text-muted);">Escaneie QR Codes nos monumentos para colecionar selos.</p>`;
+
+      if (state.demoMode) {
+        renderTrails([{ id_trilha: 1, nome: "Circuito Recife Antigo", descricao: "Do Marco Zero à Torre Malakoff", etapas_concluidas: 1, total_etapas: 4 }]);
+        renderMissions([{ titulo: "Primeiro Passo Histórico", descricao_missao: "Visite seu primeiro monumento", pontos_recompensa: 200, concluida: true, progresso: 1, total: 1 }]);
+        lucide.createIcons();
+        return;
+      }
+
+      try {
+        const [trails, missions] = await Promise.all([
+          apiFetch("/trilhas").catch(() => []),
+          apiFetch("/missoes").catch(() => [])
+        ]);
+
+        const trailsWithProgress = await Promise.all(
+          trails.map(async t => {
+            const prog = await apiFetch(`/trilhas/${t.id_trilha}/progresso`).catch(() => null);
+            return { ...t, ...(prog || {}) };
+          })
+        );
+        renderTrails(trailsWithProgress);
+        renderMissions(missions);
+        lucide.createIcons();
+      } catch (err) {
+        showAlert(err.message, "error");
+      }
+    }
+
+    function renderTrails(trails) {
+      const container = document.getElementById("trailsList");
+      if (!trails.length) {
+        container.innerHTML = `<p style="font-size:13px;color:var(--text-muted);">Nenhuma trilha disponível.</p>`;
+        return;
+      }
+      container.innerHTML = trails.map(t => {
+        const done = t.etapas_concluidas || 0;
+        const total = t.total_etapas || 1;
+        const pct = Math.min(100, Math.round((done / total) * 100));
+        return `
+          <div style="padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--cream);">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+              <strong style="font-size:14px;">${t.nome}</strong>
+              <span style="font-size:11px;font-weight:700;color:var(--colonial);">${done}/${total}</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:4px 0 8px;">${t.descricao || ""}</p>
+            <div class="progress-track" style="margin-bottom:10px;">
+              <div class="progress-fill" style="width:${pct}%;background:var(--colonial);"></div>
+            </div>
+            <button class="btn btn-petrol" style="padding:8px 12px;font-size:12px;" onclick="startTrail(${t.id_trilha})">
+              Iniciar / Continuar trilha
+            </button>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function startTrail(id) {
+      if (state.demoMode) {
+        showAlert("Trilha iniciada!", "success");
+        return;
+      }
+      try {
+        await apiFetch(`/trilhas/${id}/iniciar`, { method: "POST" });
+        showAlert("Trilha iniciada! Siga os pontos no mapa.", "success");
+        loadAchievementsData();
+      } catch (err) {
+        showAlert(err.message, "error");
+      }
+    }
+
+    function renderMissions(missions) {
+      const container = document.getElementById("missionsList");
+      if (!missions.length) {
+        container.innerHTML = `<p style="font-size:13px;color:var(--text-muted);">Nenhuma missão cadastrada.</p>`;
+        return;
+      }
+      container.innerHTML = missions.map(ms => {
+        const pct = ms.total ? Math.min(100, Math.round(((ms.progresso || 0) / ms.total) * 100)) : 0;
+        return `
+          <div style="padding:12px;border:1px solid var(--border);border-radius:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <strong style="font-size:13px;">${ms.titulo}</strong>
+              <span class="spot-tag ${ms.concluida ? "" : "near"}">${ms.concluida ? "Concluída" : `+${ms.pontos_recompensa} XP`}</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:4px 0 8px;">${ms.descricao_missao}</p>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:${pct}%;"></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // =========================================================
+    // TELA 09: PERFIL & DIÁRIO DO EXPLORADOR
+    // =========================================================
+    async function loadProfileData() {
+      if (!state.user) return;
+      document.getElementById("profileName").textContent = (state.user.nome || "Explorador").split(" ")[0];
+      document.getElementById("profileFullName").textContent = state.user.nome || "Explorador RecGo";
+      document.getElementById("profileEmail").textContent = state.user.email || "";
+      document.getElementById("profileAvatar").textContent = (state.user.nome || "R")[0].toUpperCase();
+
+      if (!state.demoMode) {
+        try {
+          const [favs, saved] = await Promise.all([
+            apiFetch("/favoritos").catch(() => []),
+            apiFetch("/narrativas/salvas").catch(() => [])
+          ]);
+          state.favorites = favs;
+          state.savedNarratives = saved;
+        } catch (_) {}
+      }
+
+      const favEl = document.getElementById("favoritesList");
+      favEl.innerHTML = state.favorites.length
+        ? state.favorites.map(f => `<div style="padding:8px 10px;background:var(--cream);border-radius:10px;color:var(--petrol);font-weight:600;">♥ ${f.nome || `Monumento #${f.id_
