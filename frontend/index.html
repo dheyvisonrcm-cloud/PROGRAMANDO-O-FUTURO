@@ -1105,15 +1105,17 @@
 
     // =========================================================
     // TELA 03: MAPA INTERATIVO (LEAFLET) & GEOLOCALIZAÇÃO
-    // =========================================================
-    function initMap() {
+    // =========================================================    function initMap() {
       if (state.map) return;
       state.map = L.map("map", { zoomControl: false }).setView([-8.0476, -34.8770], 13);
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
         attribution: "&copy; OpenStreetMap"
       }).addTo(state.map);
       state.markersLayer = L.layerGroup().addTo(state.map);
     }
+state.map);
+    
 
     function startGeolocation() {
       if (!("geolocation" in navigator)) return;
