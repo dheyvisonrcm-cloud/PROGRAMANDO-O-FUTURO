@@ -176,6 +176,21 @@ if r.status_code == 200:
 r_inexistente = chamar("GET", "/monumentos/999999/narrativa")
 checar("monumento inexistente/sem pílula retorna 404", r_inexistente.status_code == 404, str(r_inexistente.status_code))
 
+### ------------------------------------------------- diário completo (RF09 / item 2.4)
+r_diario = chamar("GET", "/diario", token)
+checar("GET /diario responde 200 OK", r_diario.status_code == 200, r_diario.text)
+if r_diario.status_code == 200:
+    d = r_diario.json()
+    checar(
+        "GET /diario retorna conquistas, favoritos, narrativas, trilhas e missões",
+        len(d.get("conquistas", [])) == 6
+        and len(d.get("favoritos", [])) == 1
+        and len(d.get("narrativas_salvas", [])) == 1
+        and len(d.get("trilhas", [])) >= 1
+        and len(d.get("missoes", [])) == 3,
+        str(d),
+    )
+
 ### ------------------------------------------------- isolamento entre usuários
 email_b = f"teste_b_{uuid.uuid4().hex[:8]}@teste-api.com"
 chamar("POST", "/cadastrar", json={"nome": "Usuario B", "email": email_b, "senha": senha})

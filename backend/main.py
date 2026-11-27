@@ -629,8 +629,8 @@ def obter_diario(
                 "id_trilha": t.id_trilha,
                 "nome_trilha": t.nome_trilha,
                 "status": ut.status,
-                "data_inicio": ut.data_inicio,
-                "data_conclusao": ut.data_conclusao,
+                "data_inicio": getattr(ut, "data_inicio", None) or getattr(ut, "iniciada_em", None),
+                "data_conclusao": getattr(ut, "data_conclusao", None) or getattr(ut, "concluida_em", None),
             }
             for ut, t in trilhas
         ],
@@ -639,9 +639,8 @@ def obter_diario(
                 "id_missao": m.id_missao,
                 "titulo": m.titulo,
                 "pontos_recompensa": m.pontos_recompensa,
-                "data_conclusao": um.data_conclusao,
+                "data_conclusao": getattr(um, "data_conclusao", None) or getattr(um, "concluida_em", None),
             }
             for um, m in missoes
         ],
-
     }
