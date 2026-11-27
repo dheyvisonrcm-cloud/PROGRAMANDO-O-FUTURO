@@ -14,12 +14,13 @@ DB_PORT = os.getenv("DB_PORT", "")
 DB_NAME = os.getenv("DB_NAME", "")
 
 DATABASE_URL = URL.create(
-    drivername="mysql+pymysql",
+    drivername="postgresql+psycopg2",  # <-- Era "mysql+pymysql"
     username=DB_USER,
     password=DB_PASS,
     host=DB_HOST,
-    port=int(DB_PORT),
+    port=int(DB_PORT),                 # No Neon a porta é 5432
     database=DB_NAME,
+    query={"sslmode": "require"},      # <-- Obrigatório no Neon
 )
 
 engine = create_engine(
