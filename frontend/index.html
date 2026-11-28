@@ -1,1637 +1,238 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>RecGo — Guia Turístico Gamificado com IA</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
-    :root {
-      --petrol: #0F3B4C;
-      --petrol-dark: #092632;
-      --solar: #F59E0B;
-      --solar-dark: #D97706;
-      --cream: #FAF7EE;
-      --cream-card: #FFFFFF;
-      --colonial: #1E7E6E;
-      --terracotta: #C83E37;
-      --text-main: #0F3B4C;
-      --text-muted: #526B75;
-      --border: #E5DFD0;
-      --shadow: 0 8px 24px rgba(15, 59, 76, 0.08);
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #16262E;
-      color: var(--text-main);
-      display: flex;
-      justify-content: center;
-      min-height: 100vh;
-    }
-
-    h1, h2, h3, h4, .brand-font { font-family: 'Plus Jakarta Sans', sans-serif; }
-
-    .app-shell {
-      width: 100%;
-      max-width: 440px;
-      min-height: 100vh;
-      background: var(--cream);
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
-      overflow-x: hidden;
-    }
-
-    /* Banners de estado (Cold start / Offline / Erros) */
-    .status-banner {
-      display: none;
-      padding: 10px 16px;
-      font-size: 13px;
-      font-weight: 500;
-      align-items: center;
-      gap: 8px;
-      z-index: 1200;
-    }
-    .status-banner.show { display: flex; }
-    .status-banner.cold { background: #FEF3C7; color: #92400E; border-bottom: 1px solid #FDE68A; }
-    .status-banner.error { background: #FEE2E2; color: #991B1B; border-bottom: 1px solid #FECACA; }
-    .status-banner.success { background: #D1FAE5; color: #065F46; border-bottom: 1px solid #A7F3D0; }
-
-    /* Gerenciamento de telas */
-    .screen { display: none; flex: 1; flex-direction: column; padding-bottom: 84px; animation: fadeIn 0.22s ease; }
-    .screen.active { display: flex; }
-    .screen.no-nav { padding-bottom: 24px; }
-
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Auth (Telas 01 e 02) */
-    .auth-header {
-      background: linear-gradient(155deg, var(--petrol) 0%, var(--petrol-dark) 100%);
-      color: var(--cream);
-      padding: 40px 24px 36px;
-      border-bottom-left-radius: 28px;
-      border-bottom-right-radius: 28px;
-      text-align: center;
-    }
-    .logo-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(245, 158, 11, 0.16);
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      color: var(--solar);
-      padding: 5px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      margin-bottom: 12px;
-    }
-    .brand-title { font-size: 38px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
-    .brand-title span { color: var(--solar); }
-    .brand-sub { font-size: 14px; color: #CBD5E1; margin-top: 8px; }
-
-    .auth-card {
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .auth-tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      background: #EDE7D7;
-      padding: 4px;
-      border-radius: 14px;
-    }
-    .auth-tab {
-      border: none;
-      background: transparent;
-      padding: 10px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 14px;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .auth-tab.active { background: var(--cream-card); color: var(--petrol); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-
-    .field-group { display: flex; flex-direction: column; gap: 6px; }
-    .field-group label { font-size: 13px; font-weight: 600; color: var(--petrol); }
-    .input-box {
-      width: 100%;
-      padding: 13px 14px;
-      border-radius: 12px;
-      border: 1.5px solid var(--border);
-      background: var(--cream-card);
-      font-size: 15px;
-      color: var(--petrol);
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .input-box:focus { border-color: var(--solar); }
-
-    .btn {
-      width: 100%;
-      padding: 14px 18px;
-      border-radius: 14px;
-      border: none;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-weight: 700;
-      font-size: 15px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: transform 0.12s, opacity 0.2s;
-    }
-    .btn:active { transform: scale(0.98); }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-primary { background: var(--solar); color: var(--petrol-dark); box-shadow: 0 6px 16px rgba(245, 158, 11, 0.28); }
-    .btn-petrol { background: var(--petrol); color: var(--cream); }
-    .btn-colonial { background: var(--colonial); color: #FFFFFF; }
-    .btn-outline { background: transparent; border: 1.5px solid var(--petrol); color: var(--petrol); }
-    .btn-ghost { background: #EDE7D7; color: var(--petrol); }
-
-    .google-disabled {
-      opacity: 0.55;
-      background: #F1F5F9;
-      color: #64748B;
-      border: 1px dashed #CBD5E1;
-      font-size: 13px;
-      cursor: not-allowed;
-    }
-
-    /* Top Bar (Tela 03) */
-    .top-bar {
-      background: var(--petrol);
-      color: var(--cream);
-      padding: 16px 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .greeting small { display: block; font-size: 12px; color: #94A3B8; }
-    .greeting strong { font-size: 17px; font-family: 'Plus Jakarta Sans', sans-serif; }
-    .xp-pill {
-      background: rgba(245, 158, 11, 0.18);
-      border: 1px solid var(--solar);
-      color: var(--solar);
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    /* Controles do Mapa */
-    .map-toolbar {
-      padding: 12px 16px;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      background: var(--cream);
-      border-bottom: 1px solid var(--border);
-    }
-    .chip {
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1.5px solid var(--border);
-      background: var(--cream-card);
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--petrol);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .chip.active { background: var(--petrol); color: var(--cream); border-color: var(--petrol); }
-
-    .view-switch {
-      margin-left: auto;
-      display: flex;
-      background: #EDE7D7;
-      padding: 3px;
-      border-radius: 999px;
-    }
-    .view-switch button {
-      border: none;
-      background: transparent;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text-muted);
-      cursor: pointer;
-    }
-    .view-switch button.active { background: var(--cream-card); color: var(--petrol); }
-
-    #map { width: 100%; height: 360px; z-index: 1; }
-
-    .selected-spot-card {
-      margin: 12px 16px 0;
-      background: var(--cream-card);
-      border-radius: 18px;
-      padding: 16px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-    }
-    .spot-tag {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: #E6F4F1;
-      color: var(--colonial);
-      margin-bottom: 6px;
-    }
-    .spot-tag.near { background: #FEF3C7; color: var(--solar-dark); }
-
-    .list-container { padding: 14px 16px; display: none; flex-direction: column; gap: 12px; }
-    .list-container.active { display: flex; }
-
-    .monument-item {
-      background: var(--cream-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-    }
-
-    /* Cabeçalho interno (Telas 04 a 07) */
-    .sub-header {
-      padding: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--cream);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 20;
-    }
-    .icon-btn {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--cream-card);
-      color: var(--petrol);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-    .icon-btn.fav-active { background: #FEE2E2; border-color: var(--terracotta); color: var(--terracotta); }
-
-    .content-pad { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
-
-    /* Prévia do Local (Tela 04) */
-    .hero-banner {
-      height: 185px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, var(--petrol) 0%, var(--colonial) 100%);
-      color: var(--cream);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      position: relative;
-      overflow: hidden;
-    }
-    .xp-badge-lg {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      background: var(--solar);
-      color: var(--petrol-dark);
-      font-weight: 800;
-      font-size: 12px;
-      padding: 5px 10px;
-      border-radius: 999px;
-    }
-
-    /* História / Pílula (Tela 05) */
-    .lore-card {
-      background: var(--cream-card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: var(--shadow);
-      line-height: 1.65;
-      font-size: 15px;
-    }
-    .layer-pills { display: flex; gap: 6px; margin-bottom: 12px; }
-    .layer-dot {
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 700;
-      background: #EDE7D7;
-      color: var(--text-muted);
-    }
-    .layer-dot.active { background: var(--petrol); color: var(--cream); }
-
-    details.sources-box {
-      background: #F4EFE2;
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-    details.sources-box summary { font-weight: 700; color: var(--petrol); cursor: pointer; }
-
-    /* Desafio e QR Code (Tela 06) */
-    .challenge-box {
-      background: #FFFBEB;
-      border: 1.5px solid #FDE68A;
-      border-radius: 18px;
-      padding: 18px;
-    }
-    #qr-reader {
-      width: 100%;
-      border-radius: 16px;
-      overflow: hidden;
-      background: #092632;
-      min-height: 220px;
-    }
-
-    /* Recompensa (Tela 07) */
-    .reward-hero {
-      text-align: center;
-      padding: 28px 20px;
-      background: linear-gradient(165deg, var(--petrol) 0%, var(--colonial) 100%);
-      color: var(--cream);
-      border-radius: 24px;
-    }
-    .brinde-circle {
-      width: 88px;
-      height: 88px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.14);
-      border: 3px solid var(--solar);
-      margin: 0 auto 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-    .brinde-circle img { width: 100%; height: 100%; object-fit: cover; }
-
-    .progress-track {
-      width: 100%;
-      height: 10px;
-      background: #E2E8F0;
-      border-radius: 999px;
-      overflow: hidden;
-      margin-top: 8px;
-    }
-    .progress-fill { height: 100%; background: var(--solar); border-radius: 999px; transition: width 0.4s ease; }
-
-    /* Conquistas & Perfil (Telas 08 e 09) */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    .stat-card {
-      background: var(--cream-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px 10px;
-      text-align: center;
-    }
-    .stat-card strong { display: block; font-size: 20px; color: var(--petrol); font-family: 'Plus Jakarta Sans', sans-serif; }
-    .stat-card span { font-size: 11px; color: var(--text-muted); font-weight: 600; }
-
-    .card-box {
-      background: var(--cream-card);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 16px;
-    }
-    .badges-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-top: 12px;
-    }
-    .badge-item {
-      background: var(--cream);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 10px 8px;
-      text-align: center;
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    /* Bottom Navigation */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      max-width: 440px;
-      background: var(--cream-card);
-      border-top: 1px solid var(--border);
-      display: none;
-      grid-template-columns: repeat(3, 1fr);
-      padding: 8px 0 12px;
-      z-index: 1000;
-    }
-    .bottom-nav.show { display: grid; }
-    .nav-btn {
-      border: none;
-      background: transparent;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-muted);
-      cursor: pointer;
-    }
-    .nav-btn.active { color: var(--petrol); }
-    .nav-btn.active svg { color: var(--solar-dark); }
-
-    .spinner {
-      width: 16px; height: 16px;
-      border: 2.5px solid rgba(15, 59, 76, 0.25);
-      border-top-color: var(--petrol);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>RecGo</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--f:'Plus Jakarta Sans',system-ui,sans-serif;--sand:#f5efe0;--or:#de581e;--pe:#005570;--nv:#001d2d;--tx:#07171e;--bl:#0d4f68;--mu:#628094;--cd:#fffdf9;--bd:#dfc7b7;--ln:#f0e7dd;--gr:#2b7245;--gd:#e8b04a}
+*{box-sizing:border-box}button,input{font-family:inherit}
+body{margin:0;background:#e9e1cf;font:400 14px/1.4 'Plus Jakarta Sans',system-ui,sans-serif;color:var(--tx)}
+#app{max-width:390px;min-height:100vh;margin:auto;background:var(--sand);position:relative;padding:4px 0 100px;border-top:4px solid var(--pe)}
+@media(min-width:430px){#app{margin:16px auto;min-height:844px;border-radius:28px;border:1px solid #0d4f69;border-top:4px solid var(--pe);overflow:hidden}}
+h1,h2,h3,p{margin:0}h1{font:700 22px/26px var(--f);color:var(--nv)}h2{font:700 20px/26px var(--f)}h3{font:700 16px/22px var(--f);color:var(--nv)}
+.pad{padding:0 24px}.mu{color:var(--mu);font-size:12px}.eb{font:700 10px/1.3 var(--f);color:var(--or);letter-spacing:.05em;text-transform:uppercase}
+.hd{display:flex;justify-content:space-between;align-items:center;margin:0 24px;padding:12px 0 8px;border-bottom:1px solid var(--ln)}
+.hd a,.lnk{color:var(--pe);font-weight:700;font-size:11px;background:none;border:0;cursor:pointer;font-family:inherit}
+.wm{font:800 22px/1 var(--f);color:var(--pe)}.wm i{font-style:normal;color:var(--or)}.hd img{height:27px}
+.art{position:relative;overflow:hidden;background:linear-gradient(160deg,#2c8a8f,#e8b04a);border:3px solid var(--gd);border-radius:60px 60px 10px 10px}
+.art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.art.w{border-radius:18px;height:200px;margin:12px 20px}
+.foot{height:92px;margin-top:28px;background:radial-gradient(90px 46px at 12% 100%,#2c8a8f 96%,#0000),radial-gradient(120px 54px at 62% 100%,#8fc1b8 96%,#0000),radial-gradient(70px 60px at 94% 100%,#de9a5a 96%,#0000)}
+.foot img{width:100%;height:100%;object-fit:cover;display:block}
+.f{margin:0 0 14px}.f label{display:block;font-weight:700;font-size:12px;color:var(--nv);margin-bottom:6px}
+.f div{position:relative}.f span{position:absolute;left:15px;top:15px;font-size:12px}
+.f input{width:100%;height:52px;padding:0 60px 0 41px;border:1px solid var(--bd);border-radius:12px;background:var(--cd);font:inherit;color:var(--tx)}
+.f button{position:absolute;right:14px;top:17px;border:0;background:none;color:var(--pe);font:700 11px var(--f);cursor:pointer}
+input:focus,button:focus-visible{outline:3px solid var(--pe);outline-offset:2px}
+.btn{display:block;width:100%;height:52px;border:0;border-radius:12px;background:var(--or);color:#fff;font:700 16px var(--f);cursor:pointer;box-shadow:0 3px 0 var(--pe);margin-top:12px}
+.btn.g{background:var(--cd);color:var(--nv);border:1px solid var(--bd);box-shadow:none}.btn:disabled{opacity:.6}
+.ok{display:flex;gap:10px;align-items:center;background:#f1f3e8;border:1px solid #d5e1cd;border-radius:8px;padding:12px;font:700 11px/16px var(--f);color:var(--pe);margin-top:18px}
+.ok b{background:var(--gr);color:#fff;border-radius:50%;min-width:24px;height:24px;display:grid;place-items:center;font-size:12px}
+.row{display:flex;gap:8px;align-items:center;padding:0 24px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 14px;border-radius:20px;border:1.5px solid var(--or);background:var(--cd);color:var(--or);font:700 12px var(--f);cursor:pointer}
+.chip.on{background:var(--or);color:#fff}.chip.s{border-color:var(--bd);color:var(--nv)}
+.q{flex:1;height:36px;border:1px solid var(--bd);border-radius:18px;background:var(--cd);padding:0 14px;font:inherit}
+#map{height:330px;margin:12px 16px 0;border-radius:18px;border:1px solid var(--bd);box-shadow:0 2px 8px #0002}
+.pin i{display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--pe);border:2px solid #fff;box-shadow:0 2px 5px #0005}.pin.n i{background:var(--or)}
+.cd{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:0 24px 10px}
+.sh{display:flex;gap:12px;margin:12px 16px 0;padding:10px;background:var(--cd);border:1px solid var(--bd);border-radius:16px;box-shadow:0 2px 8px #0002}
+.sh .art{width:72px;min-height:112px;border-radius:36px 36px 8px 8px;flex:none}
+.tg{display:inline-block;padding:3px 10px;border-radius:12px;border:1.5px solid var(--pe);color:var(--bl);font:600 11px var(--f);text-transform:uppercase}
+.tg.o{background:#fde9de;border-color:#f3c3a8;color:var(--or)}
+.top{display:flex;align-items:center;justify-content:space-between;padding:14px 24px 0}
+.bk{border:0;background:none;font:600 16px var(--f);color:var(--tx);cursor:pointer;padding:0}
+.xp{font:700 13px var(--f);color:var(--bl)}
+.bar{height:6px;border-radius:4px;background:#eadfca;margin:8px 0 4px}.bar i{display:block;height:100%;border-radius:4px;background:var(--or)}
+.lore{margin:14px 24px;font-size:14px;line-height:20px;color:var(--bl)}
+.dots{display:flex;gap:6px;justify-content:center;margin:14px 0}.dots i{width:8px;height:8px;border-radius:50%;background:#e1d5bd}.dots .on{background:var(--or)}
+.big{font:800 44px/1 var(--f);color:var(--or);text-align:center;margin:4px 0}
+.med{width:42px;height:42px;border-radius:50%;background:var(--cd);border:2px solid var(--gd);display:grid;place-items:center;overflow:hidden;font-size:20px;flex:none}.med img{width:100%;height:100%;object-fit:cover}
+.lv{display:flex;gap:12px;align-items:center;margin:14px 24px;padding:14px;background:var(--cd);border:1px solid var(--bd);border-radius:14px}.lv>div{flex:1}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 24px}
+.st{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:12px 6px;text-align:center;font-size:11px;color:var(--mu)}.st b{display:block;font-size:24px;color:var(--or)}
+.sc{display:flex;justify-content:space-between;align-items:baseline;padding:22px 24px 10px}
+.selo{text-align:center;font:600 11px/14px var(--f)}.selo .med{margin:0 auto 6px;width:56px;height:56px}
+.li{display:flex;align-items:center;gap:12px;padding:12px 4px;border-top:1px solid var(--ln)}.li:first-child{border:0}
+.rd{margin:12px 24px;padding:14px;border-radius:14px;background:var(--cd);border:1px solid var(--bd);border-left:5px solid var(--gd)}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:390px;display:flex;background:var(--cd);border-top:1px solid var(--bd);padding:8px 0 max(10px,env(safe-area-inset-bottom));z-index:500}
+nav button{flex:1;border:0;background:none;font:600 12px var(--f);color:var(--mu);padding:4px;cursor:pointer}nav b{display:block;font-size:22px;font-weight:400}nav .on{color:var(--or)}
+#toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:var(--nv);color:#fff;padding:11px 16px;border-radius:12px;max-width:340px;z-index:9999;font-weight:600;display:none}
+#load{position:fixed;inset:0;background:#f5efe0ee;display:none;place-items:center;text-align:center;z-index:9998;font-weight:600}
+#reader{border-radius:14px;overflow:hidden;margin-top:10px}
+</style>
 </head>
 <body>
-  <div class="app-shell">
-    <!-- Banners globais de rede / Render Cold Start / Alertas -->
-    <div id="coldBanner" class="status-banner cold">
-      <div class="spinner"></div>
-      <span>Acordando o servidor do RecGo no Render... aguarde alguns segundos.</span>
-    </div>
-    <div id="alertBanner" class="status-banner error">
-      <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
-      <span id="alertText">Mensagem</span>
-    </div>
-
-    <!-- =========================================================
-         TELAS 01 & 02: ACESSO À CIDADE (CADASTRO & LOGIN JWT)
-    ========================================================== -->
-    <section id="screen-auth" class="screen no-nav active">
-      <div class="auth-header">
-        <div class="logo-badge"><i data-lucide="compass" style="width:14px;height:14px;"></i> RECIFE • OLINDA</div>
-        <h1 class="brand-title">Rec<span>GO</span></h1>
-        <p class="brand-sub">Explore. Aprenda. Descubra a história viva.</p>
-      </div>
-
-      <div class="auth-card">
-        <div class="auth-tabs">
-          <button id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Entrar</button>
-          <button id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Criar conta</button>
-        </div>
-
-        <form id="authForm" onsubmit="handleAuthSubmit(event)" style="display:flex;flex-direction:column;gap:14px;">
-          <div id="nameFieldGroup" class="field-group" style="display:none;">
-            <label for="inputNome">Como você quer ser chamado?</label>
-            <input id="inputNome" class="input-box" type="text" placeholder="Ex.: Dheyvison" />
-          </div>
-
-          <div class="field-group">
-            <label for="inputEmail">E-mail</label>
-            <input id="inputEmail" class="input-box" type="email" required placeholder="voce@exemplo.com" />
-          </div>
-
-          <div class="field-group">
-            <label for="inputSenha">Senha (6 a 72 caracteres)</label>
-            <input id="inputSenha" class="input-box" type="password" minlength="6" maxlength="72" required placeholder="••••••" />
-          </div>
-
-          <button id="authSubmitBtn" type="submit" class="btn btn-primary">
-            <i data-lucide="log-in" style="width:18px;height:18px;"></i>
-            <span id="authSubmitText">Entrar na cidade</span>
-          </button>
-        </form>
-
-        <button type="button" class="btn google-disabled" disabled title="Disponível após o MVP">
-          Continuar com Google (Em breve no MVP)
-        </button>
-
-        <div style="text-align:center;margin-top:4px;">
-          <button type="button" onclick="enterDemoMode()" style="background:none;border:none;color:var(--colonial);font-weight:700;font-size:13px;text-decoration:underline;cursor:pointer;">
-            Testar em Modo Demonstração (Offline / Sem API)
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- =========================================================
-         TELA 03: MAPA INTERATIVO & LISTA DE MONUMENTOS
-    ========================================================== -->
-    <section id="screen-map" class="screen">
-      <div class="top-bar">
-        <div class="greeting">
-          <small>Explorador(a)</small>
-          <strong id="userGreeting">Olá, Viajante!</strong>
-        </div>
-        <div class="xp-pill">
-          <i data-lucide="sparkles" style="width:14px;height:14px;"></i>
-          <span id="headerLevelXp">Nível 1 • 0 XP</span>
-        </div>
-      </div>
-
-      <div class="map-toolbar">
-        <button id="btnNearMe" class="chip" onclick="toggleNearFilter()">
-          <i data-lucide="navigation" style="width:13px;height:13px;"></i>
-          Perto de mim (&lt;200m)
-        </button>
-        <div class="view-switch">
-          <button id="btnViewMap" class="active" onclick="switchMapView('map')">Mapa</button>
-          <button id="btnViewList" onclick="switchMapView('list')">Lista</button>
-        </div>
-      </div>
-
-      <div id="mapWrapper">
-        <div id="map"></div>
-        <div id="selectedSpotCard" class="selected-spot-card">
-          <span id="spotDistanceTag" class="spot-tag">Selecione um pino no mapa</span>
-          <h3 id="spotTitle" style="font-size:18px;margin-bottom:4px;">Pronto para explorar?</h3>
-          <p id="spotDesc" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
-            Toque em qualquer marcador histórico de Recife ou Olinda para ver a prévia e desbloquear histórias com IA.
-          </p>
-          <button id="btnOpenPreview" class="btn btn-primary" disabled onclick="openSpotPreview()">
-            Ver prévia do local
-          </button>
-        </div>
-      </div>
-
-      <div id="monumentsList" class="list-container"></div>
-    </section>
-
-    <!-- =========================================================
-         TELA 04: PRÉVIA DO LOCAL
-    ========================================================== -->
-    <section id="screen-preview" class="screen no-nav">
-      <div class="sub-header">
-        <button class="icon-btn" onclick="goToScreen('screen-map')" aria-label="Voltar">
-          <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
-        </button>
-        <strong style="font-size:15px;">Prévia do Monumento</strong>
-        <button id="btnFavToggle" class="icon-btn" onclick="toggleFavorite()" aria-label="Favoritar">
-          <i data-lucide="heart" style="width:18px;height:18px;"></i>
-        </button>
-      </div>
-
-      <div class="content-pad">
-        <div class="hero-banner">
-          <span class="xp-badge-lg">+50 XP + Brinde</span>
-          <small id="previewCity" style="opacity:0.85;font-weight:600;">Recife • PE</small>
-          <h2 id="previewTitle" style="font-size:22px;line-height:1.2;margin-top:4px;">Nome do Monumento</h2>
-        </div>
-
-        <div class="card-box">
-          <h4 style="font-size:14px;margin-bottom:6px;">Sobre este patrimônio</h4>
-          <p id="previewDesc" style="font-size:14px;color:var(--text-muted);line-height:1.6;"></p>
-        </div>
-
-        <div class="card-box" style="display:flex;align-items:center;gap:12px;background:#F4EFE2;">
-          <i data-lucide="qr-code" style="width:28px;height:28px;color:var(--petrol);flex-shrink:0;"></i>
-          <div style="font-size:12px;color:var(--text-muted);">
-            <strong style="color:var(--petrol);display:block;">Validação Presencial</strong>
-            Leia a pílula histórica gerada por IA e escaneie o QR Code físico no local para registrar sua conquista.
-          </div>
-        </div>
-
-        <button class="btn btn-primary" onclick="startDiscovery()">
-          <i data-lucide="compass" style="width:18px;height:18px;"></i>
-          Começar descoberta
-        </button>
-      </div>
-    </section>
-
-    <!-- =========================================================
-         TELA 05: HISTÓRIA (PÍLULA DE LORE COM IA)
-    ========================================================== -->
-    <section id="screen-story" class="screen no-nav">
-      <div class="sub-header">
-        <button class="icon-btn" onclick="goToScreen('screen-preview')" aria-label="Voltar">
-          <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
-        </button>
-        <strong style="font-size:15px;">Pílula de História</strong>
-        <button id="btnSaveLore" class="icon-btn" onclick="saveCurrentLore()" aria-label="Salvar no diário">
-          <i data-lucide="bookmark" style="width:18px;height:18px;"></i>
-        </button>
-      </div>
-
-      <div class="content-pad">
-        <div class="lore-card">
-          <div class="layer-pills">
-            <span id="loreVariantBadge" class="layer-dot active">Camada 1 de 3</span>
-            <span class="layer-dot" style="background:#FEF3C7;color:#92400E;">IA Curada</span>
-          </div>
-          <h3 id="loreMonumentName" style="font-size:18px;margin-bottom:10px;"></h3>
-          <p id="loreText" style="color:var(--petrol);">Carregando narrativa histórica...</p>
-        </div>
-
-        <details class="sources-box">
-          <summary>Fontes e curadoria desta história</summary>
-          <p style="margin-top:8px;line-height:1.5;">
-            Narrativa gerada por IA a partir de acervos patrimoniais do IPHAN, Prefeitura do Recife e Prefeitura de Olinda, validada pela curadoria educacional do RecGo.
-          </p>
-        </details>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <button id="btnNextLayer" class="btn btn-ghost" onclick="loadNextLoreVariant()">
-            <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
-            Próxima camada
-          </button>
-          <button class="btn btn-colonial" onclick="openChallengeScreen()">
-            Ir para desafio
-            <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- =========================================================
-         TELA 06: DESAFIO DE OBSERVAÇÃO & SCANNER QR CODE
-    ========================================================== -->
-    <section id="screen-challenge" class="screen no-nav">
-      <div class="sub-header">
-        <button class="icon-btn" onclick="closeChallengeScreen()" aria-label="Voltar">
-          <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
-        </button>
-        <strong style="font-size:15px;">Desafio &amp; Check-in QR</strong>
-        <div style="width:38px;"></div>
-      </div>
-
-      <div class="content-pad">
-        <div class="challenge-box">
-          <span class="spot-tag near">Missão de Observação</span>
-          <h3 style="font-size:16px;margin-bottom:6px;">Observe o monumento ao seu redor:</h3>
-          <p id="challengeText" style="font-size:14px;line-height:1.55;color:var(--petrol);"></p>
-        </div>
-
-        <div class="card-box">
-          <h4 style="font-size:14px;margin-bottom:8px;">1. Confirme sua observação</h4>
-          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;">
-            <input id="chkObservation" type="checkbox" style="margin-top:3px;width:16px;height:16px;accent-color:var(--colonial);" />
-            <span>Estou no local e concluí o desafio de observação acima.</span>
-          </label>
-        </div>
-
-        <div class="card-box">
-          <h4 style="font-size:14px;margin-bottom:8px;">2. Escaneie o QR Code do monumento</h4>
-          <div id="qr-reader"></div>
-          <button id="btnToggleCamera" type="button" class="btn btn-petrol" style="margin-top:10px;" onclick="toggleQrCamera()">
-            <i data-lucide="camera" style="width:17px;height:17px;"></i>
-            <span id="btnCameraLabel">Ativar câmera traseira</span>
-          </button>
-
-          <div style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);">
-            <label for="manualQrInput" style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;">
-              Ou digite o código do QR Code manualmente:
-            </label>
-            <div style="display:flex;gap:8px;">
-              <input id="manualQrInput" class="input-box" type="text" placeholder="Ex.: RECGO-MARCO-ZERO" style="padding:10px 12px;font-size:13px;" />
-              <button type="button" class="btn btn-primary" style="width:auto;padding:10px 16px;" onclick="submitManualQr()">
-                Validar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- =========================================================
-         TELA 07: RECOMPENSA DESBLOQUEADA
-    ========================================================== -->
-    <section id="screen-reward" class="screen no-nav">
-      <div class="content-pad" style="padding-top:28px;">
-        <div class="reward-hero">
-          <div id="rewardBrindeIcon" class="brinde-circle">
-            <i data-lucide="award" style="width:40px;height:40px;color:var(--solar);"></i>
-          </div>
-          <span class="logo-badge" style="margin-bottom:8px;">DESCOBERTA REGISTRADA</span>
-          <h2 style="font-size:26px;">Muito bem!</h2>
-          <p id="rewardMsg" style="font-size:14px;opacity:0.9;margin-top:6px;">Você desbloqueou um novo patrimônio histórico.</p>
-          <div style="margin-top:16px;font-size:28px;font-weight:800;color:var(--solar);" id="rewardXpGained">+50 XP</div>
-          <div id="rewardBrindeName" style="font-size:13px;font-weight:700;margin-top:4px;"></div>
-        </div>
-
-        <div id="rewardMissionsBox" class="card-box" style="display:none;background:#ECFDF5;border-color:#6EE7B7;">
-          <strong style="color:#065F46;font-size:14px;display:block;margin-bottom:4px;">Missão Concluída!</strong>
-          <div id="rewardMissionsList" style="font-size:13px;color:#047857;"></div>
-        </div>
-
-        <div class="card-box">
-          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;">
-            <span id="rewardLevelLabel">Nível 1</span>
-            <span id="rewardTotalXpLabel">50 XP</span>
-          </div>
-          <div class="progress-track">
-            <div id="rewardProgressFill" class="progress-fill" style="width:50%;"></div>
-          </div>
-        </div>
-
-        <button class="btn btn-primary" onclick="goToScreen('screen-map')">Voltar ao mapa</button>
-        <button class="btn btn-outline" onclick="goToScreen('screen-achievements')">Ver minhas conquistas</button>
-      </div>
-    </section>
-
-    <!-- =========================================================
-         TELA 08: CONQUISTAS, TRILHAS E MISSÕES
-    ========================================================== -->
-    <section id="screen-achievements" class="screen">
-      <div class="top-bar">
-        <div class="greeting">
-          <small>Sua jornada</small>
-          <strong>Conquistas &amp; Trilhas</strong>
-        </div>
-        <div class="xp-pill" id="achLevelBadge">Nível 1</div>
-      </div>
-
-      <div class="content-pad">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <strong id="statPlaces">0</strong>
-            <span>Lugares</span>
-          </div>
-          <div class="stat-card">
-            <strong id="statBrindes">0</strong>
-            <span>Selos</span>
-          </div>
-          <div class="stat-card">
-            <strong id="statXp">0</strong>
-            <span>XP Total</span>
-          </div>
-        </div>
-
-        <div class="card-box">
-          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;">
-            <span id="achLevelText">Nível 1 — Explorador Iniciante</span>
-            <span id="achNextLevelXp">0 / 100 XP</span>
-          </div>
-          <div class="progress-track">
-            <div id="achLevelFill" class="progress-fill" style="width:0%;"></div>
-          </div>
-        </div>
-
-        <div class="card-box">
-          <h3 style="font-size:15px;">Selos Colecionados</h3>
-          <div id="badgesGrid" class="badges-grid"></div>
-        </div>
-
-        <div class="card-box">
-          <h3 style="font-size:15px;margin-bottom:10px;">Trilhas Temáticas</h3>
-          <div id="trailsList" style="display:flex;flex-direction:column;gap:12px;"></div>
-        </div>
-
-        <div class="card-box">
-          <h3 style="font-size:15px;margin-bottom:10px;">Missões Ativas</h3>
-          <div id="missionsList" style="display:flex;flex-direction:column;gap:10px;"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- =========================================================
-         TELA 09: PERFIL & DIÁRIO DO EXPLORADOR
-    ========================================================== -->
-    <section id="screen-profile" class="screen">
-      <div class="top-bar">
-        <div class="greeting">
-          <small>Conta &amp; Diário</small>
-          <strong id="profileName">Explorador</strong>
-        </div>
-        <button onclick="logout()" style="background:rgba(255,255,255,0.12);border:none;color:var(--cream);padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">
-          Sair
-        </button>
-      </div>
-
-      <div class="content-pad">
-        <div class="card-box" style="display:flex;align-items:center;gap:14px;">
-          <div style="width:52px;height:52px;border-radius:50%;background:var(--petrol);color:var(--solar);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;" id="profileAvatar">
-            R
-          </div>
-          <div>
-            <strong id="profileFullName" style="font-size:16px;display:block;">Explorador RecGo</strong>
-            <span id="profileEmail" style="font-size:13px;color:var(--text-muted);">email@exemplo.com</span>
-          </div>
-        </div>
-
-        <div class="card-box">
-          <h3 style="font-size:15px;margin-bottom:10px;">Monumentos Favoritos</h3>
-          <div id="favoritesList" style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-muted);">
-            Nenhum favorito salvo ainda.
-          </div>
-        </div>
-
-        <div class="card-box">
-          <h3 style="font-size:15px;margin-bottom:10px;">Diário de Histórias Salvas</h3>
-          <div id="savedNarrativesList" style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--text-muted);">
-            Nenhuma pílula histórica salva no diário.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- =========================================================
-         BARRA INFERIOR GLOBAL (MAPA | CONQUISTAS | PERFIL)
-    ========================================================== -->
-    <nav id="bottomNav" class="bottom-nav">
-      <button id="nav-map" class="nav-btn active" onclick="goToScreen('screen-map')">
-        <i data-lucide="map-pin" style="width:20px;height:20px;"></i>
-        <span>Mapa</span>
-      </button>
-      <button id="nav-achievements" class="nav-btn" onclick="goToScreen('screen-achievements')">
-        <i data-lucide="trophy" style="width:20px;height:20px;"></i>
-        <span>Conquistas</span>
-      </button>
-      <button id="nav-profile" class="nav-btn" onclick="goToScreen('screen-profile')">
-        <i data-lucide="user" style="width:20px;height:20px;"></i>
-        <span>Perfil</span>
-      </button>
-    </nav>
-  </div>
-
-  <script>
-    const API_BASE_URL = "https://programando-o-futuro-6zpg.onrender.com";
-
-    const state = {
-      authMode: "login",
-      demoMode: false,
-      user: null,
-      monuments: [],
-      selectedMonument: null,
-      currentLore: null,
-      favorites: [],
-      savedNarratives: [],
-      trails: [],
-      missions: [],
-      nearOnly: false,
-      userCoords: null,
-      map: null,
-      markersLayer: null,
-      userMarker: null,
-      html5Qr: null,
-      cameraRunning: false
-    };
-
-    // Dados fallback caso o usuário clique em "Modo Demonstração"
-    const DEMO_MONUMENTS = [
-      { id_monumento: 1, nome: "Praça do Marco Zero", cidade: "Recife", latitude: -8.0631, longitude: -34.8711, descricao: "Ponto zero das estradas de Pernambuco e coração histórico do Recife Antigo, emoldurado pela Rosa dos Ventos de Cícero Dias." },
-      { id_monumento: 2, nome: "Torre Malakoff", cidade: "Recife", latitude: -8.0608, longitude: -34.8705, descricao: "Antigo observatório astronômico e portão monumental do Arsenal da Marinha, inspirado na fortaleza de Sebastopol." },
-      { id_monumento: 3, nome: "Alto da Sé", cidade: "Olinda", latitude: -8.0147, longitude: -34.8492, descricao: "Mirante histórico de Olinda com vista panorâmica para o Recife, cercado por igrejas seculares e tapiocas tradicionais." }
-    ];
-
-    // =========================================================
-    // HELPER HTTP CENTRALIZADO (JWT + COLD START + ERROS)
-    // =========================================================
-    async function apiFetch(path, options = {}) {
-      const token = localStorage.getItem("access_token");
-      const headers = {
-        "Content-Type": "application/json",
-        ...(options.headers || {})
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const coldTimer = setTimeout(() => {
-        document.getElementById("coldBanner").classList.add("show");
-      }, 2500);
-
-      try {
-        const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
-        clearTimeout(coldTimer);
-        document.getElementById("coldBanner").classList.remove("show");
-
-        if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem("access_token");
-          showAlert("Sua sessão expirou. Faça login novamente.", "error");
-          goToScreen("screen-auth");
-          throw new Error("Sessão expirada");
-        }
-
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          const msg = Array.isArray(data.detail)
-            ? data.detail.map(e => e.msg).join(", ")
-            : (data.detail || `Erro HTTP ${response.status}`);
-          throw new Error(msg);
-        }
-        return data;
-      } catch (err) {
-        clearTimeout(coldTimer);
-        document.getElementById("coldBanner").classList.remove("show");
-        if (err.message === "Failed to fetch") {
-          throw new Error("Sem conexão com o servidor. Verifique sua internet (operação 100% online).");
-        }
-        throw err;
-      }
-    }
-
-    function showAlert(message, type = "error") {
-      const banner = document.getElementById("alertBanner");
-      banner.className = `status-banner ${type} show`;
-      document.getElementById("alertText").textContent = message;
-      setTimeout(() => banner.classList.remove("show"), 4500);
-    }
-
-    // =========================================================
-    // NAVEGAÇÃO ENTRE AS 9 TELAS
-    // =========================================================
-    function goToScreen(screenId) {
-      if (state.cameraRunning && screenId !== "screen-challenge") {
-        stopQrCamera();
-      }
-      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-      document.getElementById(screenId).classList.add("active");
-
-      const navScreens = ["screen-map", "screen-achievements", "screen-profile"];
-      const bottomNav = document.getElementById("bottomNav");
-      if (navScreens.includes(screenId)) {
-        bottomNav.classList.add("show");
-        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-        if (screenId === "screen-map") document.getElementById("nav-map").classList.add("active");
-        if (screenId === "screen-achievements") {
-          document.getElementById("nav-achievements").classList.add("active");
-          loadAchievementsData();
-        }
-        if (screenId === "screen-profile") {
-          document.getElementById("nav-profile").classList.add("active");
-          loadProfileData();
-        }
-      } else {
-        bottomNav.classList.remove("show");
-      }
-
-      if (screenId === "screen-map" && state.map) {
-        setTimeout(() => state.map.invalidateSize(), 150);
-      }
-    }
-
-    // =========================================================
-    // TELAS 01 & 02: AUTENTICAÇÃO (CADASTRO & LOGIN)
-    // =========================================================
-    function switchAuthTab(mode) {
-      state.authMode = mode;
-      document.getElementById("tabLogin").classList.toggle("active", mode === "login");
-      document.getElementById("tabRegister").classList.toggle("active", mode === "register");
-      const nameGroup = document.getElementById("nameFieldGroup");
-      const nameInput = document.getElementById("inputNome");
-      if (mode === "register") {
-        nameGroup.style.display = "flex";
-        nameInput.required = true;
-        document.getElementById("authSubmitText").textContent = "Criar conta e explorar";
-      } else {
-        nameGroup.style.display = "none";
-        nameInput.required = false;
-        document.getElementById("authSubmitText").textContent = "Entrar na cidade";
-      }
-    }
-
-    async function handleAuthSubmit(e) {
-      e.preventDefault();
-      const btn = document.getElementById("authSubmitBtn");
-      const nome = document.getElementById("inputNome").value.trim();
-      const email = document.getElementById("inputEmail").value.trim();
-      const senha = document.getElementById("inputSenha").value;
-
-      if (senha.length < 6 || senha.length > 72) {
-        showAlert("A senha deve ter entre 6 e 72 caracteres.", "error");
-        return;
-      }
-
-      btn.disabled = true;
-      try {
-        if (state.authMode === "register") {
-          await apiFetch("/cadastrar", {
-            method: "POST",
-            body: JSON.stringify({ nome, email, senha })
-          });
-          showAlert("Conta criada com sucesso! Entrando...", "success");
-        }
-
-        const loginData = await apiFetch("/login", {
-          method: "POST",
-          body: JSON.stringify({ email, senha })
-        });
-
-        localStorage.setItem("access_token", loginData.access_token);
-        state.demoMode = false;
-        await bootstrapApp();
-      } catch (err) {
-        showAlert(err.message, "error");
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    function enterDemoMode() {
-      state.demoMode = true;
-      state.user = {
-        id_usuario: 99,
-        nome: "Explorador Demo",
-        email: "demo@recgo.app",
-        pontos_totais: 150,
-        monumentos_conquistados: [1],
-        brindes: [{ nome: "Selo Marco Zero", imagem_url: "" }]
-      };
-      state.monuments = DEMO_MONUMENTS;
-      updateUserHeader();
-      goToScreen("screen-map");
-      initMap();
-      renderMonuments();
-    }
-
-    function logout() {
-      localStorage.removeItem("access_token");
-      state.user = null;
-      state.demoMode = false;
-      goToScreen("screen-auth");
-    }
-
-    async function bootstrapApp() {
-      try {
-        const [me, monuments, favs] = await Promise.all([
-          apiFetch("/usuarios/me"),
-          apiFetch("/monumentos"),
-          apiFetch("/favoritos").catch(() => [])
-        ]);
-        state.user = me;
-        state.monuments = monuments;
-        state.favorites = Array.isArray(favs) ? favs : [];
-        updateUserHeader();
-        goToScreen("screen-map");
-        initMap();
-        renderMonuments();
-        startGeolocation();
-      } catch (err) {
-        showAlert(err.message, "error");
-      }
-    }
-
-    function updateUserHeader() {
-      if (!state.user) return;
-      const xp = state.user.pontos_totais || 0;
-      const level = Math.floor(xp / 100) + 1;
-      const firstName = (state.user.nome || "Viajante").split(" ")[0];
-      document.getElementById("userGreeting").textContent = `Olá, ${firstName}!`;
-      document.getElementById("headerLevelXp").textContent = `Nível ${level} • ${xp} XP`;
-    }
-
-    // =========================================================
-    // TELA 03: MAPA INTERATIVO (LEAFLET) & GEOLOCALIZAÇÃO
-    // =========================================================    
-    function initMap() {
-      if (state.map) return;
-      state.map = L.map("map", { zoomControl: false }).setView([-8.0476, -34.8770], 13);
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap"
-      }).addTo(state.map);
-      state.markersLayer = L.layerGroup().addTo(state.map);
-    }
-    
-
-    function startGeolocation() {
-      if (!("geolocation" in navigator)) return;
-      navigator.geolocation.watchPosition(
-        (pos) => {
-          state.userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          if (state.map) {
-            if (!state.userMarker) {
-              state.userMarker = L.circleMarker([state.userCoords.lat, state.userCoords.lng], {
-                radius: 8, fillColor: "#2563EB", color: "#FFFFFF", weight: 2, fillOpacity: 0.9
-              }).addTo(state.map).bindPopup("Você está aqui");
-            } else {
-              state.userMarker.setLatLng([state.userCoords.lat, state.userCoords.lng]);
-            }
-          }
-          renderMonuments();
-        },
-        () => { /* GPS negado: segue navegável sem bloqueio */ },
-        { enableHighAccuracy: true }
-      );
-    }
-
-    function haversineMeters(lat1, lon1, lat2, lon2) {
-      const R = 6371000;
-      const toRad = d => d * Math.PI / 180;
-      const dLat = toRad(lat2 - lat1);
-      const dLon = toRad(lon2 - lon1);
-      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
-
-    function toggleNearFilter() {
-      state.nearOnly = !state.nearOnly;
-      document.getElementById("btnNearMe").classList.toggle("active", state.nearOnly);
-      if (state.nearOnly && !state.userCoords) {
-        showAlert("Ative o GPS no navegador para filtrar monumentos a menos de 200m.", "cold");
-      }
-      renderMonuments();
-    }
-
-    function switchMapView(mode) {
-      document.getElementById("btnViewMap").classList.toggle("active", mode === "map");
-      document.getElementById("btnViewList").classList.toggle("active", mode === "list");
-      document.getElementById("mapWrapper").style.display = mode === "map" ? "block" : "none";
-      document.getElementById("monumentsList").classList.toggle("active", mode === "list");
-      if (mode === "map" && state.map) setTimeout(() => state.map.invalidateSize(), 100);
-    }
-
-    function renderMonuments() {
-      if (state.markersLayer) state.markersLayer.clearLayers();
-      const listEl = document.getElementById("monumentsList");
-      listEl.innerHTML = "";
-
-      const filtered = state.monuments.filter(m => {
-        if (!state.nearOnly || !state.userCoords) return true;
-        return haversineMeters(state.userCoords.lat, state.userCoords.lng, m.latitude, m.longitude) <= 200;
-      });
-
-      filtered.forEach(m => {
-        const dist = state.userCoords
-          ? Math.round(haversineMeters(state.userCoords.lat, state.userCoords.lng, m.latitude, m.longitude))
-          : null;
-        const isNear = dist !== null && dist <= 200;
-
-        if (state.markersLayer) {
-          const pin = L.circleMarker([m.latitude, m.longitude], {
-            radius: isNear ? 11 : 9,
-            fillColor: isNear ? "#F59E0B" : "#0F3B4C",
-            color: "#FFFFFF",
-            weight: 2.5,
-            fillOpacity: 1
-          }).addTo(state.markersLayer);
-
-          pin.on("click", () => selectMonument(m, dist));
-        }
-
-        const item = document.createElement("div");
-        item.className = "monument-item";
-        item.innerHTML = `
-          <div>
-            <span class="spot-tag ${isNear ? "near" : ""}">${m.cidade}${dist !== null ? ` • ${dist}m` : ""}</span>
-            <h4 style="font-size:15px;">${m.nome}</h4>
-            <p style="font-size:12px;color:var(--text-muted);margin-top:2px;">${(m.descricao || "").slice(0, 75)}...</p>
-          </div>
-          <i data-lucide="chevron-right" style="width:20px;height:20px;color:var(--petrol);flex-shrink:0;"></i>
-        `;
-        item.onclick = () => {
-          selectMonument(m, dist);
-          openSpotPreview();
-        };
-        listEl.appendChild(item);
-      });
-
-      lucide.createIcons();
-    }
-
-    function selectMonument(monument, dist) {
-      state.selectedMonument = monument;
-      const tag = document.getElementById("spotDistanceTag");
-      tag.textContent = dist !== null ? `${monument.cidade} • a ${dist}m de você` : monument.cidade;
-      tag.className = `spot-tag ${dist !== null && dist <= 200 ? "near" : ""}`;
-      document.getElementById("spotTitle").textContent = monument.nome;
-      document.getElementById("spotDesc").textContent = monument.descricao || "Explore este marco histórico.";
-      document.getElementById("btnOpenPreview").disabled = false;
-    }
-
-    // =========================================================
-    // TELA 04: PRÉVIA DO LOCAL & FAVORITOS
-    // =========================================================
-    function openSpotPreview() {
-      const m = state.selectedMonument;
-      if (!m) return;
-      document.getElementById("previewCity").textContent = `${m.cidade} • PE`;
-      document.getElementById("previewTitle").textContent = m.nome;
-      document.getElementById("previewDesc").textContent = m.descricao || "";
-      updateFavButtonState();
-      goToScreen("screen-preview");
-    }
-
-    function isFavorited(id) {
-      return state.favorites.some(f => (f.id_monumento || f) === id);
-    }
-
-    function updateFavButtonState() {
-      const btn = document.getElementById("btnFavToggle");
-      if (!state.selectedMonument) return;
-      btn.classList.toggle("fav-active", isFavorited(state.selectedMonument.id_monumento));
-    }
-
-    async function toggleFavorite() {
-      const m = state.selectedMonument;
-      if (!m) return;
-      const already = isFavorited(m.id_monumento);
-
-      if (state.demoMode) {
-        state.favorites = already
-          ? state.favorites.filter(f => (f.id_monumento || f) !== m.id_monumento)
-          : [...state.favorites, m];
-        updateFavButtonState();
-        return;
-      }
-
-      try {
-        if (already) {
-          await apiFetch(`/favoritos/${m.id_monumento}`, { method: "DELETE" });
-          state.favorites = state.favorites.filter(f => (f.id_monumento || f) !== m.id_monumento);
-        } else {
-          await apiFetch(`/favoritos/${m.id_monumento}`, { method: "POST" });
-          state.favorites.push(m);
-        }
-        updateFavButtonState();
-      } catch (err) {
-        showAlert(err.message, "error");
-      }
-    }
-
-    // =========================================================
-    // TELA 05: HISTÓRIA (PÍLULA DE LORE + 3 CAMADAS + SALVAR)
-    // =========================================================
-    async function startDiscovery() {
-      goToScreen("screen-story");
-      await fetchLoreVariant(null);
-    }
-
-    async function fetchLoreVariant(excludeId) {
-      const m = state.selectedMonument;
-      if (!m) return;
-      document.getElementById("loreMonumentName").textContent = m.nome;
-      document.getElementById("loreText").textContent = "Carregando camada histórica...";
-
-      if (state.demoMode) {
-        const nextVar = state.currentLore ? ((state.currentLore.variante % 3) + 1) : 1;
-        state.currentLore = {
-          id_narrativa_monumento: nextVar,
-          id_monumento: m.id_monumento,
-          variante: nextVar,
-          total_variantes: 3,
-          texto_narrativa: `Camada ${nextVar}: No coração de ${m.cidade}, o monumento ${m.nome} guarda registros fundamentais da formação cultural pernambucana, conectando arquitetura, resistência popular e memória urbana.`,
-          desafio: "Observe a fachada principal e identifique um elemento arquitetônico original da época."
-        };
-        renderLoreCard();
-        return;
-      }
-
-      try {
-        const query = excludeId ? `?excluir=${excludeId}` : "";
-        const data = await apiFetch(`/monumentos/${m.id_monumento}/narrativa${query}`);
-        state.currentLore = data;
-        renderLoreCard();
-      } catch (err) {
-        showAlert(err.message, "error");
-      }
-    }
-
-    function renderLoreCard() {
-      const lore = state.currentLore;
-      if (!lore) return;
-      document.getElementById("loreVariantBadge").textContent = `Camada ${lore.variante || 1} de ${lore.total_variantes || 3}`;
-      document.getElementById("loreText").textContent = lore.texto_narrativa;
-    }
-
-    function loadNextLoreVariant() {
-      const currentId = state.currentLore ? state.currentLore.id_narrativa_monumento : null;
-      fetchLoreVariant(currentId);
-    }
-
-    async function saveCurrentLore() {
-      if (!state.currentLore) return;
-      if (state.demoMode) {
-        state.savedNarratives.push({ ...state.currentLore, monumento_nome: state.selectedMonument.nome });
-        showAlert("História salva no seu diário!", "success");
-        return;
-      }
-      try {
-        await apiFetch(`/narrativas/${state.currentLore.id_narrativa_monumento}/salvar`, { method: "POST" });
-        showAlert("Pílula histórica salva no seu diário!", "success");
-      } catch (err) {
-        showAlert(err.message, "error");
-      }
-    }
-
-    // =========================================================
-    // TELA 06: DESAFIO DE OBSERVAÇÃO & SCANNER QR CODE
-    // =========================================================
-    function openChallengeScreen() {
-      document.getElementById("chkObservation").checked = false;
-      document.getElementById("manualQrInput").value = "";
-      document.getElementById("challengeText").textContent =
-        (state.currentLore && state.currentLore.desafio) ||
-        "Observe os detalhes históricos ao seu redor e escaneie a placa QR Code do monumento.";
-      goToScreen("screen-challenge");
-    }
-
-    function closeChallengeScreen() {
-      stopQrCamera();
-      goToScreen("screen-story");
-    }
-
-    async function toggleQrCamera() {
-      if (state.cameraRunning) {
-        await stopQrCamera();
-        return;
-      }
-      try {
-        state.html5Qr = new Html5Qrcode("qr-reader");
-        await state.html5Qr.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 210, height: 210 } },
-          async (decodedText) => {
-            await stopQrCamera();
-            await redeemQrCode(decodedText);
-          }
-        );
-        state.cameraRunning = true;
-        document.getElementById("btnCameraLabel").textContent = "Parar câmera";
-      } catch (err) {
-        showAlert("Não foi possível abrir a câmera. Use o campo de código manual abaixo.", "error");
-      }
-    }
-
-    async function stopQrCamera() {
-      if (state.html5Qr && state.cameraRunning) {
-        try { await state.html5Qr.stop(); } catch (_) {}
-      }
-      state.cameraRunning = false;
-      const lbl = document.getElementById("btnCameraLabel");
-      if (lbl) lbl.textContent = "Ativar câmera traseira";
-    }
-
-    function submitManualQr() {
-      const code = document.getElementById("manualQrInput").value.trim();
-      if (!code) {
-        showAlert("Digite o código do QR Code do monumento.", "error");
-        return;
-      }
-      redeemQrCode(code);
-    }
-
-    async function redeemQrCode(qrcodeHash) {
-      if (!document.getElementById("chkObservation").checked) {
-        showAlert("Quase lá — marque a confirmação do desafio de observação antes de validar o QR Code!", "error");
-        return;
-      }
-
-      if (state.demoMode) {
-        state.user.pontos_totais += 50;
-        updateUserHeader();
-        showRewardScreen({
-          mensagem: `Você explorou ${state.selectedMonument.nome}!`,
-          pontos_ganhos: 50,
-          total_pontos_atual: state.user.pontos_totais,
-          brinde_desbloqueado: { nome: `Selo ${state.selectedMonument.nome}`, imagem_url: "" },
-          missoes_concluidas: []
-        });
-        return;
-      }
-
-      try {
-        // Contrato SDD: NUNCA enviar id_usuario no payload; servidor extrai do JWT
-        const result = await apiFetch("/conquistas/resgatar", {
-          method: "POST",
-          body: JSON.stringify({ qrcode_hash: qrcodeHash })
-        });
-
-        const freshMe = await apiFetch("/usuarios/me");
-        state.user = freshMe;
-        updateUserHeader();
-        showRewardScreen(result);
-      } catch (err) {
-        showAlert(err.message, "error");
-      }
-    }
-
-    // =========================================================
-    // TELA 07: RECOMPENSA DESBLOQUEADA
-    // =========================================================
-    function showRewardScreen(data) {
-      document.getElementById("rewardMsg").textContent = data.mensagem || "Descoberta validada com sucesso!";
-      document.getElementById("rewardXpGained").textContent = `+${data.pontos_ganhos || 50} XP`;
-
-      const brinde = data.brinde_desbloqueado;
-      const iconContainer = document.getElementById("rewardBrindeIcon");
-      if (brinde && brinde.imagem_url) {
-        iconContainer.innerHTML = `<img src="${brinde.imagem_url}" alt="${brinde.nome}" />`;
-      } else {
-        iconContainer.innerHTML = `<i data-lucide="award" style="width:40px;height:40px;color:var(--solar);"></i>`;
-      }
-      document.getElementById("rewardBrindeName").textContent = brinde ? `Brinde: ${brinde.nome}` : "";
-
-      const missionsBox = document.getElementById("rewardMissionsBox");
-      if (Array.isArray(data.missoes_concluidas) && data.missoes_concluidas.length > 0) {
-        missionsBox.style.display = "block";
-        document.getElementById("rewardMissionsList").innerHTML = data.missoes_concluidas
-          .map(ms => `• ${ms.titulo || ms.nome} (+${ms.pontos_recompensa || 200} XP)`)
-          .join("<br/>");
-      } else {
-        missionsBox.style.display = "none";
-      }
-
-      const totalXp = data.total_pontos_atual ?? (state.user ? state.user.pontos_totais : 50);
-      const level = Math.floor(totalXp / 100) + 1;
-      const progressPct = totalXp % 100;
-      document.getElementById("rewardLevelLabel").textContent = `Nível ${level}`;
-      document.getElementById("rewardTotalXpLabel").textContent = `${totalXp} XP`;
-      document.getElementById("rewardProgressFill").style.width = `${progressPct}%`;
-
-      goToScreen("screen-reward");
-      lucide.createIcons();
-    }
-
-    // =========================================================
-    // TELA 08: CONQUISTAS, TRILHAS E MISSÕES
-    // =========================================================
-    async function loadAchievementsData() {
-      const xp = (state.user && state.user.pontos_totais) || 0;
-      const level = Math.floor(xp / 100) + 1;
-      const placesCount = (state.user && state.user.monumentos_conquistados && state.user.monumentos_conquistados.length) || 0;
-      const brindes = (state.user && state.user.brindes) || [];
-
-      document.getElementById("achLevelBadge").textContent = `Nível ${level}`;
-      document.getElementById("statPlaces").textContent = placesCount;
-      document.getElementById("statBrindes").textContent = brindes.length;
-      document.getElementById("statXp").textContent = xp;
-      document.getElementById("achLevelText").textContent = `Nível ${level} — Explorador`;
-      document.getElementById("achNextLevelXp").textContent = `${xp % 100} / 100 XP`;
-      document.getElementById("achLevelFill").style.width = `${xp % 100}%`;
-
-      const badgesGrid = document.getElementById("badgesGrid");
-      badgesGrid.innerHTML = brindes.length
-        ? brindes.map(b => `
-            <div class="badge-item">
-              ${b.imagem_url
-                ? `<img src="${b.imagem_url}" alt="${b.nome}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;margin-bottom:6px;" />`
-                : `<i data-lucide="award" style="width:26px;height:26px;color:var(--solar-dark);margin-bottom:4px;"></i>`}
-              <div>${b.nome}</div>
-            </div>`).join("")
-        : `<p style="grid-column:1/-1;font-size:12px;color:var(--text-muted);">Escaneie QR Codes nos monumentos para colecionar selos.</p>`;
-
-      if (state.demoMode) {
-        renderTrails([{ id_trilha: 1, nome: "Circuito Recife Antigo", descricao: "Do Marco Zero à Torre Malakoff", etapas_concluidas: 1, total_etapas: 4 }]);
-        renderMissions([{ titulo: "Primeiro Passo Histórico", descricao_missao: "Visite seu primeiro monumento", pontos_recompensa: 200, concluida: true, progresso: 1, total: 1 }]);
-        lucide.createIcons();
-        return;
-      }
-
-      try {
-        const [trails, missions] = await Promise.all([
-          apiFetch("/trilhas").catch(() => []),
-          apiFetch("/missoes").catch(() => [])
-        ]);
-
-        const trailsWithProgress = await Promise.all(
-          trails.map(async t => {
-            const prog = await apiFetch(`/trilhas/${t.id_trilha}/progresso`).catch(() => null);
-            return { ...t, ...(prog || {}) };
-          })
-        );
-        renderTrails(trailsWithProgress);
-        renderMissions(missions);
-        lucide.createIcons();
-      } catch (err) {
-        showAlert(err.message, "error");
-      }
-    }
-
-    function renderTrails(trails) {
-      const container = document.getElementById("trailsList");
-      if (!trails.length) {
-        container.innerHTML = `<p style="font-size:13px;color:var(--text-muted);">Nenhuma trilha disponível.</p>`;
-        return;
-      }
-      container.innerHTML = trails.map(t => {
-        const done = t.etapas_concluidas || 0;
-        const total = t.total_etapas || 1;
-        const pct = Math.min(100, Math.round((done / total) * 100));
-        return `
-          <div style="padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--cream);">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-              <strong style="font-size:14px;">${t.nome}</strong>
-              <span style="font-size:11px;font-weight:700;color:var(--colonial);">${done}/${total}</span>
-            </div>
-            <p style="font-size:12px;color:var(--text-muted);margin:4px 0 8px;">${t.descricao || ""}</p>
-            <div class="progress-track" style="margin-bottom:10px;">
-              <div class="progress-fill" style="width:${pct}%;background:var(--colonial);"></div>
-            </div>
-            <button class="btn btn-petrol" style="padding:8px 12px;font-size:12px;" onclick="startTrail(${t.id_trilha})">
-              Iniciar / Continuar trilha
-            </button>
-          </div>
-        `;
-      }).join("");
-    }
-
-    async function startTrail(id) {
-      if (state.demoMode) {
-        showAlert("Trilha iniciada!", "success");
-        return;
-      }
-      try {
-        await apiFetch(`/trilhas/${id}/iniciar`, { method: "POST" });
-        showAlert("Trilha iniciada! Siga os pontos no mapa.", "success");
-        loadAchievementsData();
-      } catch (err) {
-        showAlert(err.message, "error");
-      }
-    }
-
-    function renderMissions(missions) {
-      const container = document.getElementById("missionsList");
-      if (!missions.length) {
-        container.innerHTML = `<p style="font-size:13px;color:var(--text-muted);">Nenhuma missão cadastrada.</p>`;
-        return;
-      }
-      container.innerHTML = missions.map(ms => {
-        const pct = ms.total ? Math.min(100, Math.round(((ms.progresso || 0) / ms.total) * 100)) : 0;
-        return `
-          <div style="padding:12px;border:1px solid var(--border);border-radius:14px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <strong style="font-size:13px;">${ms.titulo}</strong>
-              <span class="spot-tag ${ms.concluida ? "" : "near"}">${ms.concluida ? "Concluída" : `+${ms.pontos_recompensa} XP`}</span>
-            </div>
-            <p style="font-size:12px;color:var(--text-muted);margin:4px 0 8px;">${ms.descricao_missao}</p>
-            <div class="progress-track">
-              <div class="progress-fill" style="width:${pct}%;"></div>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    // =========================================================
-    // TELA 09: PERFIL & DIÁRIO DO EXPLORADOR
-    // =========================================================
-    async function loadProfileData() {
-      if (!state.user) return;
-      document.getElementById("profileName").textContent = (state.user.nome || "Explorador").split(" ")[0];
-      document.getElementById("profileFullName").textContent = state.user.nome || "Explorador RecGo";
-      document.getElementById("profileEmail").textContent = state.user.email || "";
-      document.getElementById("profileAvatar").textContent = (state.user.nome || "R")[0].toUpperCase();
-
-      if (!state.demoMode) {
-        try {
-          const [favs, saved] = await Promise.all([
-            apiFetch("/favoritos").catch(() => []),
-            apiFetch("/narrativas/salvas").catch(() => [])
-          ]);
-          state.favorites = favs;
-          state.savedNarratives = saved;
-        } catch (_) {}
-      }
-
-      const favEl = document.getElementById("favoritesList");
-      favEl.innerHTML = state.favorites.length
-        ? state.favorites.map(f => `<div style="padding:8px 10px;background:var(--cream);border-radius:10px;color:var(--petrol);font-weight:600;">♥ ${f.nome || `Monumento #${f.id_onumento}`}</div>`).join("")
-        : "Nenhum favorito salvo ainda.";
-
-      const savedEl = document.getElementById("savedNarrativesList");
-      savedEl.innerHTML = state.savedNarratives.length
-        ? state.savedNarratives.map(n => `
-            <div style="padding:10px;background:var(--cream);border-radius:12px;border:1px solid var(--border);">
-              <strong style="color:var(--petrol);display:block;margin-bottom:4px;">${n.monumento_nome || "História Salva"}</strong>
-              <p style="line-height:1.5;">${n.texto_narrativa || ""}</p>
-            </div>`).join("")
-        : "Nenhuma pílula histórica salva no diário.";
-    }
-
-    // =========================================================
-    // INICIALIZAÇÃO AUTOMÁTICA (AUTO-LOGIN SE TOKEN EXISTIR)
-    // =========================================================
-    window.addEventListener("DOMContentLoaded", () => {
-      lucide.createIcons();
-      const savedToken = localStorage.getItem("access_token");
-      if (savedToken) {
-        bootstrapApp();
-      }
-    });
-  </script>
+<div id="app"></div><div id="toast" role="alert"></div>
+<div id="load"><div><div style="font-size:42px">🌴</div>Acordando o servidor…<br><span class="mu">Na primeira visita pode levar alguns segundos.</span></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+const API='https://programando-o-futuro-6zpg.onrender.com';
+/* Ilustrações do Figma: exporte e salve em /assets (nomes abaixo). Sem o arquivo, entra um degradê. */
+const IMG={logo:'assets/logo.png',arco:'assets/arco-olinda.png',rodape:'assets/rodape.png',mon:id=>`assets/monumentos/${id}.jpg`,selo:id=>`assets/selos/${id}.png`};
+const $=s=>document.querySelector(s),app=$('#app');
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let tok=localStorage.getItem('access_token')||sessionStorage.getItem('access_token'),me=null,mons=[],favs=new Set(),pos=null,map=null,um=null,qr=null,cur=null,story=null,layer=1,near=false,fl=0;
+const lvl=p=>Math.floor(p/100)+1,nm=m=>m.nome_monumento||m.nome,ds=m=>m.descricao_monumento||m.descricao||'';
+const hav=(a,b,c,d)=>{const r=Math.PI/180,x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2;return 12742000*Math.asin(Math.sqrt(x))};
+const dist=m=>pos&&m.latitude!=null?hav(pos[0],pos[1],+m.latitude,+m.longitude):null;
+const fmt=d=>d==null?'':d<1000?'~'+Math.round(d)+' m · em linha reta':'~'+(d/1000).toFixed(1)+' km';
+const art=(src,c='')=>`<div class="art ${c}"><img src="${src}" alt="" onerror="this.remove()"></div>`;
+const foot=()=>`<div class="foot"><img src="${IMG.rodape}" alt="" onerror="this.remove()"></div>`;
+const logo=()=>`<img src="${IMG.logo}" alt="OlindaGO" onerror="this.outerHTML='<b class=wm>Olinda<i>GO</i></b>'">`;
+const hd=r=>`<div class="hd">${logo()}${r||''}</div>`;
+const xpBar=p=>`<div class="bar"><i style="width:${p%100}%"></i></div><span class="mu">Mais ${100-p%100} XP para o nível ${lvl(p)+1}</span>`;
+const lvCard=(p,t)=>`<div class="lv"><div class="med">★</div><div><b>Nível ${lvl(p)} · ${t||'Olhar atento'}</b>${xpBar(p)}</div><span class="mu">${p%100}/100</span></div>`;
+function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',3800)}
+const load=v=>$('#load').style.display=v?'grid':'none';
+function out(){stopQr();tok=me=null;localStorage.removeItem('access_token');sessionStorage.removeItem('access_token');auth('login')}
+async function api(p,o={}){
+  const t=setTimeout(()=>load(1),1500);
+  try{
+    const r=await fetch(API+p,{...o,headers:{'Content-Type':'application/json',...(tok?{Authorization:'Bearer '+tok}:{})}});
+    clearTimeout(t);load(0);let d=null;try{d=await r.json()}catch(e){}
+    if((r.status==401||r.status==403)&&tok&&p!='/login'){out();throw new Error('Sessão expirada. Entre novamente.')}
+    if(!r.ok)throw new Error(typeof d?.detail=='string'?d.detail:d?.detail?.[0]?.msg||'Erro '+r.status);
+    return d;
+  }catch(e){clearTimeout(t);load(0);throw e instanceof TypeError?new Error('Sem conexão ou servidor acordando. Tente de novo.'):e}
+}
+const run=f=>Promise.resolve().then(f).catch(e=>toast(e.message));
+function shell(h,tab){stopQr();app.innerHTML=h+(tab?`<nav>${[['mapa','🗺️','Mapa',mapv],['conq','🏅','Conquistas',conqv],['perfil','👤','Perfil',perfilv]].map(([k,i,l,f])=>`<button class="${k==tab?'on':''}" onclick="run(${f.name})"><b>${i}</b>${l}</button>`).join('')}</nav>`:'');scrollTo(0,0)}
+function stopQr(){if(qr){const q=qr;qr=null;q.stop().catch(()=>{})}}
+
+/* 01 Cadastro e 02 Login */
+function auth(m){
+  const c=m=='cad';
+  shell(`${hd(c?'<button class="lnk" onclick="auth(\'login\')">Já tem conta?</button>':'<button class="lnk" onclick="toast(\'Ajuda em breve.\')">Ajuda</button>')}
+  <div class="pad" style="padding-top:24px"><div style="display:flex;justify-content:space-between;gap:12px"><div><p class="eb">${c?'Sua primeira camada':'Sua próxima camada'}</p>
+  <h1 style="margin-top:8px">${c?'Olinda tem muito<br>para você descobrir.':'Que bom ter você<br>de volta.'}</h1><p class="mu" style="margin-top:12px;max-width:222px;font-size:12px;line-height:19px">${c?'Crie sua conta e guarde cada descoberta.':'Entre para continuar descobrindo a cidade.'}</p></div>${art(IMG.arco,'')} </div>
+  <form id="f" style="margin-top:22px">${c?'<div class="f"><label>Nome</label><div><span>👤</span><input name="nome" placeholder="Como você quer ser chamado?" required></div></div>':''}
+  <div class="f"><label>E-mail</label><div><span>✉️</span><input name="email" type="email" placeholder="voce@email.com" required></div></div>
+  <div class="f"><label>Senha</label><div><span>🔒</span><input name="senha" id="pw" type="password" placeholder="${c?'Crie uma senha (6 a 72 caracteres)':'Digite sua senha'}" ${c?'minlength="6" maxlength="72"':''} required><button type="button" onclick="pw.type=pw.type=='password'?'text':'password'">Ver</button></div></div>
+  ${c?'':'<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mu)"><label><input type="checkbox" id="keep" checked> Manter conectado</label><button type="button" class="lnk" style="color:var(--or);font-size:10px" onclick="toast(\'Recuperação de senha em breve.\')">Esqueci minha senha</button></div>'}
+  <button class="btn">${c?'Criar conta':'Entrar &nbsp;→'}</button></form>
+  ${c?'':'<p class="mu" style="text-align:center;margin:18px 0 12px;font-size:10px">ou continue com</p><button class="btn g" disabled>G &nbsp;Google (em breve)</button>'}
+  <p class="mu" style="text-align:center;margin-top:18px;font-size:11px">${c?'Já tem uma conta? <button class="lnk" style="color:var(--or)" onclick="auth(\'login\')">Entre para continuar.</button>':'Ainda não tem uma conta? <button class="lnk" style="color:var(--or)" onclick="auth(\'cad\')">Criar conta</button>'}</p>
+  <div class="ok"><b>✦</b>Suas histórias e conquistas ficam guardadas no seu perfil.</div></div>${foot()}`);
+  $('#f').onsubmit=e=>{e.preventDefault();run(async()=>{
+    const d=Object.fromEntries(new FormData(e.target));
+    if(c)await api('/cadastrar',{method:'POST',body:JSON.stringify(d)});
+    const r=await api('/login',{method:'POST',body:JSON.stringify({email:d.email,senha:d.senha})});
+    tok=r.access_token;(c||$('#keep')?.checked?localStorage:sessionStorage).setItem('access_token',tok);me=null;await mapv()})};
+}
+
+/* 03 Mapa */
+async function mapv(){
+  me=await api('/usuarios/me');if(!mons.length)mons=await api('/monumentos');
+  shell(`${hd(`<span class="xp">Nível ${lvl(me.pontos_totais)} · ${me.pontos_totais} XP</span>`)}
+  <div class="row" style="justify-content:space-between;padding-top:14px"><div><h2 style="font-size:22px;color:var(--nv)">Olá, ${esc(me.nome)}!</h2><p class="mu">Que camada você vai descobrir?</p></div><button class="chip ${near?'on':''}" onclick="nearMe()">📍 Perto de mim</button></div>
+  <div class="row" style="margin-top:12px"><input class="q" id="q" placeholder="🔍 Buscar lugar" oninput="busca()"><button class="chip s" id="tg" onclick="tgl()">Lista</button></div>
+  <div id="map"></div><div id="lst" hidden style="padding-top:12px"></div><div id="sel"></div>`,'mapa');
+  map=L.map('map',{zoomControl:true}).setView([-8.04,-34.88],12);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  um=null;const pts=[];
+  mons.forEach((m,i)=>{if(m.latitude==null||m.longitude==null)return;const ll=[+m.latitude,+m.longitude],d=dist(m);pts.push(ll);
+    L.marker(ll,{icon:L.divIcon({className:'pin'+(d!=null&&d<=200?' n':''),html:'<i></i>',iconSize:[26,26],iconAnchor:[13,26]})}).on('click',()=>sel(i)).addTo(map)});
+  if(pts.length)map.fitBounds(pts,{padding:[30,30]});
+  lista();gps();sel(prox());
+}
+function prox(){let b=0,bd=1e12;mons.forEach((m,i)=>{const d=dist(m);if(d!=null&&d<bd){bd=d;b=i}});return b}
+function gps(){if(!navigator.geolocation||gps.on)return;gps.on=1;
+  navigator.geolocation.watchPosition(p=>{pos=[p.coords.latitude,p.coords.longitude];
+    if(map&&$('#map')){um?um.setLatLng(pos):um=L.circleMarker(pos,{radius:8,color:'#fff',weight:3,fillColor:'#2a6df4',fillOpacity:1}).addTo(map);lista()}},()=>{},{enableHighAccuracy:true})}
+function lista(){const l=$('#lst');if(!l)return;const q=($('#q').value||'').toLowerCase();
+  let a=mons.map((m,i)=>({m,i,d:dist(m)})).filter(x=>nm(x.m).toLowerCase().includes(q));
+  if(near)a=a.filter(x=>x.d!=null).sort((x,y)=>x.d-y.d);
+  l.innerHTML=a.map(({m,i,d})=>`<div class="cd" onclick="run(()=>pv(${i}))"><b>${esc(nm(m))}</b><br><span class="mu">${esc(m.cidade||'')} ${fmt(d)}${d!=null&&d<=200?' · você está aqui':''}</span></div>`).join('')||'<p class="pad mu">Nenhum lugar encontrado.'+(near?' Ative o GPS para ver os lugares perto de você.':'')+'</p>'}
+function busca(){lista();if($('#lst').hidden)tgl(1)}
+function sel(i){const m=mons[i];if(!m)return;const d=dist(m);$('#sel').innerHTML=`<div class="sh">${art(IMG.mon(m.id_monumento))}<div style="flex:1"><div style="display:flex;justify-content:space-between"><b style="font-size:12px;color:var(--bl)">Próxima descoberta</b><span class="mu" style="font-size:10px">${fmt(d)}</span></div><h2 style="font-size:20px;margin:6px 0 2px">${esc(nm(m))}</h2><p class="mu">${esc(m.cidade||'História, vistas e novas camadas.')}</p><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><span class="tg o">+ Novo local</span><button class="lnk" style="font-size:12px" onclick="run(()=>pv(${i}))">Ver local →</button></div></div></div>`}
+function nearMe(){if(!pos)return toast('Ative a localização do aparelho para usar “Perto de mim”.');near=!near;mapv().then(()=>{if(near){map.flyTo(pos,17);tgl(1)}}).catch(e=>toast(e.message))}
+function tgl(on){const l=$('#lst'),m=$('#map'),s=on||l.hidden;l.hidden=!s;m.hidden=s;$('#sel').hidden=s;$('#tg').textContent=s?'Mapa':'Lista';if(!s)map.invalidateSize()}
+
+/* 04 Prévia do local */
+async function pv(i){
+  cur=mons[i];if(!pv.f){favs=new Set((await api('/favoritos')).map(f=>f.id_monumento));pv.f=1}
+  shell(`<div class="top"><button class="bk" onclick="run(mapv)">‹ Mapa</button><span style="font-size:12px;color:var(--bl)">Detalhe do local</span><button class="lnk" aria-label="Favoritar" id="hr" style="font-size:20px" onclick="run(fav)">${favs.has(cur.id_monumento)?'❤️':'🤍'}</button></div>
+  ${art(IMG.mon(cur.id_monumento),'w')}
+  <div class="pad"><span class="tg o">+ Novo local</span> <span class="tg">${esc(cur.cidade||'Cultura & memória')}</span>
+  <h1 style="margin:12px 0 6px">${esc(nm(cur))}</h1><p style="color:var(--bl);font-size:13px;line-height:20px">${esc(ds(cur))||'Um lugar cheio de histórias esperando por você.'}</p>
+  <div style="display:flex;justify-content:space-between;margin:14px 0;font-size:12px"><span class="mu">⏱ 3 min · 1 missão</span><b class="xp" style="color:var(--or)">+${cur.pontos||10} XP possíveis</b></div>
+  <div class="cd" style="margin:0"><b>Sua exploração começa aqui</b><div class="bar"><i style="width:8%"></i></div></div>
+  <button class="btn" onclick="run(()=>storyv(0))">Começar descoberta &nbsp;→</button>
+  <p class="mu" style="text-align:center;margin-top:12px;font-size:11px">Você pode explorar sem compartilhar sua localização exata.</p></div>${foot()}`);
+}
+async function fav(){const id=cur.id_monumento,h=favs.has(id);await api('/favoritos/'+id,{method:h?'DELETE':'POST'});h?favs.delete(id):favs.add(id);$('#hr').textContent=h?'🤍':'❤️'}
+
+/* 05 História */
+async function storyv(more){
+  try{story=await api(`/monumentos/${cur.id_monumento}/narrativa${more&&story?'?excluir='+story.id_narrativa_monumento:''}`)}catch(e){return toast(e.message)}
+  layer=more?(layer%story.total_variantes)+1:1;const n=story.total_variantes;
+  shell(`<div class="top"><button class="bk" onclick="run(()=>pv(mons.indexOf(cur)))">‹ Sair</button><b style="font-size:12px;color:var(--bl)">${esc(nm(cur)).toUpperCase()}</b><span class="mu">${layer}/${n}</span></div>
+  <div class="pad" style="margin-top:14px"><span class="tg">Camada ${layer} · Origens</span></div>${art(IMG.mon(cur.id_monumento),'w')}
+  <div class="pad"><p class="eb" style="color:var(--bl)">Olhe de novo para o lugar</p><h2 style="margin:6px 0 8px;color:var(--nv)">Uma história que o lugar conta</h2></div>
+  <p class="lore" style="margin-top:0">${esc(story.texto_narrativa)}</p>
+  <div class="cd" onclick="run(salvar)" style="cursor:pointer;display:flex;justify-content:space-between"><b>🔖 Salvar no diário</b><span>+</span></div>
+  <div class="dots">${Array.from({length:n},(_,i)=>`<i class="${i+1==layer?'on':''}"></i>`).join('')}</div>
+  <div class="pad">${n>1?'<button class="btn g" onclick="run(()=>storyv(1))">Próxima camada &nbsp;→</button>':''}<button class="btn" onclick="chal()">Ir para o desafio &nbsp;→</button></div>${foot()}`);
+}
+async function salvar(){await api(`/narrativas/${story.id_narrativa_monumento}/salvar`,{method:'POST'});toast('História salva no seu diário.')}
+
+/* 06 Desafio e QR Code */
+function chal(){
+  shell(`<div class="top"><button class="bk" onclick="run(()=>storyv(0))">‹ História</button><span style="font-size:12px;color:var(--bl)">MISSÃO · 1/1</span><span></span></div>
+  <div class="pad" style="margin-top:14px"><span class="tg">Missão · Observe o lugar</span></div>${art(IMG.mon(cur.id_monumento),'w')}
+  <div class="pad"><h2 style="color:var(--tx)">${esc(story.desafio||'Observe o lugar com calma e encontre um detalhe que só você notou.')}</h2><p style="color:var(--bl);font-size:12px;margin-top:8px">Faça com calma. Errar faz parte da descoberta.</p>
+  <button class="btn" id="ok" onclick="$('#ok').hidden=true;$('#qb').hidden=false">Concluí o desafio</button>
+  <div id="qb" hidden><div class="rd"><b>Quase lá!</b><p style="color:var(--bl);font-size:12px">Agora registre a descoberta: aponte a câmera para o QR Code do local ou digite o código.</p></div>
+  <button class="btn" onclick="scan()">Ler QR Code com a câmera</button><div id="reader"></div>
+  <input class="q" id="cod" placeholder="Ou digite o código do local" style="width:100%;height:48px;margin-top:12px"><button class="btn g" onclick="run(()=>resg($('#cod').value.trim()))">Validar código</button></div>
+  <p class="mu" style="text-align:center;margin-top:14px;font-size:11px">Dica: você pode voltar à história a qualquer momento.</p></div>${foot()}`);
+}
+function scan(){stopQr();qr=new Html5Qrcode('reader');
+  qr.start({facingMode:'environment'},{fps:10,qrbox:220},t=>{stopQr();run(()=>resg(t))}).catch(()=>{qr=null;toast('Não foi possível abrir a câmera. Digite o código manualmente.')})}
+async function resg(code){if(!code)return toast('Informe o código do QR Code.');
+  const r=await api('/conquistas/resgatar',{method:'POST',body:JSON.stringify({qrcode_hash:code})});me=await api('/usuarios/me');reward(r)}
+
+/* 07 Recompensa */
+function reward(r){
+  const ms=(r.missoes_concluidas||[]).map(m=>`<div class="rd">🏆 Missão concluída: <b>${esc(m.titulo||m.nome||m)}</b>${m.pontos_recompensa?` · +${m.pontos_recompensa} XP`:''}</div>`).join('');
+  shell(`${hd()}<div style="text-align:center;padding:16px 24px 0"><span class="tg o">Nova camada descoberta</span><h1 style="font-size:28px;line-height:36px;margin:10px 0 6px">Muito bem, ${esc(me.nome)}!</h1><p class="mu" style="font-size:13px">Você acabou de descobrir uma nova história de Olinda.</p>
+  ${r.brinde_desbloqueado?`<div class="med" style="width:110px;height:110px;margin:18px auto 8px;font-size:48px">🏅</div><h3>${esc(r.brinde_desbloqueado)}</h3>`:'<div class="med" style="width:110px;height:110px;margin:18px auto;font-size:48px">⭐</div>'}</div>
+  <div class="cd" style="text-align:center"><span class="eb" style="color:var(--bl)">Pontos conquistados</span><div class="big">+${r.pontos_ganhos} XP</div><span class="mu">Missão concluída · camada registrada</span></div>${ms}
+  <div class="pad"><div style="display:flex;justify-content:space-between;font-size:12px"><b>Próximo nível</b><span class="mu">${me.pontos_totais} / ${lvl(me.pontos_totais)*100} XP</span></div><div class="bar"><i style="width:${me.pontos_totais%100}%"></i></div>
+  <button class="btn" onclick="run(mapv)">Voltar ao mapa</button><button class="btn g" onclick="run(conqv)">Ver minhas conquistas &nbsp;→</button><p class="mu" style="text-align:center;margin-top:12px;font-size:11px">Seu progresso fica salvo no seu perfil.</p></div>`);
+}
+
+/* 08 Conquistas */
+async function conqv(){
+  const[u,ms,ts]=await Promise.all([api('/usuarios/me'),api('/missoes'),api('/trilhas')]);me=u;
+  const pg=await Promise.all(ts.map(t=>api(`/trilhas/${t.id_trilha}/progresso`).catch(()=>null)));const bs=u.brindes||[];
+  shell(`<div class="hd" style="border:0"><h2 style="color:var(--nv)">Minhas conquistas</h2><button class="med" style="width:28px;height:28px;font:700 13px var(--f);border:0;background:var(--or);color:#fff" onclick="run(perfilv)">${esc(u.nome[0]||'?').toUpperCase()}</button></div>
+  <div class="pad"><p class="eb" style="color:var(--bl)">Seu caminho por Olinda</p><h1 style="margin:4px 0">Cada lugar deixa uma marca.</h1><p class="mu" style="font-size:13px">Você está construindo sua própria coleção.</p></div>${lvCard(u.pontos_totais)}
+  <div class="pad"><h3>Seu percurso</h3></div><div class="g3" style="margin-top:10px"><div class="st"><b>${u.monumentos_conquistados}</b>Lugares visitados</div><div class="st"><b>${bs.length}</b>Selos</div><div class="st"><b>${u.pontos_totais}</b>XP conquistados</div></div>
+  <div class="sc"><h3>Selos colecionados</h3></div><div class="g3">${bs.map(b=>`<div class="selo"><div class="med"><img src="${esc(b.imagem_url||IMG.selo(b.brinde_id))}" alt="" onerror="this.outerHTML='🏅'"></div>${esc(b.nome_brinde)}</div>`).join('')||'<p class="mu" style="grid-column:1/-1">Visite um lugar e leia o QR Code para ganhar seu primeiro selo.</p>'}</div>
+  <div class="sc"><h3>Missões</h3></div>${ms.map(m=>`<div class="cd"><b>${m.concluida?'✅ ':''}${esc(m.titulo)}</b> <span class="tg o">+${m.pontos_recompensa} XP</span><p class="mu" style="margin-top:4px">${esc(m.descricao_missao)}</p><div class="bar"><i style="width:${m.total?Math.round(100*m.progresso/m.total):0}%"></i></div><span class="mu">${m.progresso}/${m.total}</span></div>`).join('')}
+  <div class="sc"><h3>Trilhas</h3></div>${ts.map((t,i)=>{const p=pg[i];return `<div class="cd"><b>${esc(t.nome_trilha)}</b><p class="mu" style="margin-top:4px">${esc(t.descricao_trilha||'')}</p>${p?`<div class="bar"><i style="width:${Math.round(100*p.etapas_concluidas/p.total_etapas)}%"></i></div><span class="mu">${p.etapas_concluidas}/${p.total_etapas}${p.proximo_monumento?' · próximo: '+esc(p.proximo_monumento.nome_monumento):' · trilha concluída'}</span>`:`<button class="btn g" style="height:42px;margin-top:10px" onclick="run(()=>ini(${t.id_trilha}))">Iniciar trilha</button>`}</div>`}).join('')}`,'conq');
+}
+async function ini(id){await api(`/trilhas/${id}/iniciar`,{method:'POST'});toast('Trilha iniciada!');await conqv()}
+
+/* 09 Perfil */
+async function perfilv(){
+  const[u,fv,sv]=await Promise.all([api('/usuarios/me'),api('/favoritos'),api('/narrativas/salvas')]);me=u;
+  const opt=[['👤','Meus dados','Nome, e-mail e senha'],['🔒','Privacidade e localização','Controle o que você compartilha'],['♿','Acessibilidade','Preferências de leitura e interface'],['❔','Ajuda e sobre o RecGo','Suporte e informações do app']];
+  shell(`<div class="hd" style="border:0"><h2 style="color:var(--nv)">Meu perfil</h2></div>
+  <div style="text-align:center"><div class="med" style="width:88px;height:88px;margin:4px auto 10px;font:800 38px var(--f);color:var(--pe);border-width:3px;border-radius:44px 44px 12px 12px">${esc(u.nome[0]||'?').toUpperCase()}</div><p class="eb" style="color:var(--bl)">Explorador(a) de Olinda</p><h1 style="margin-top:4px">${esc(u.nome)}</h1><p class="mu">${esc(u.email)}</p></div>
+  ${lvCard(u.pontos_totais)}<div class="g3"><div class="st"><b>${u.monumentos_conquistados}</b>Lugares</div><div class="st"><b>${sv.length}</b>Histórias</div><div class="st"><b>${(u.brindes||[]).length}</b>Selos</div></div>
+  <div class="sc"><h3>Favoritos</h3></div><div class="pad">${fv.map(f=>`<div class="li">❤️ ${esc(f.nome_monumento)}</div>`).join('')||'<p class="mu">Toque no coração de um lugar para guardá-lo aqui.</p>'}</div>
+  <div class="sc"><h3>Histórias salvas</h3></div>${sv.map(s=>`<div class="cd"><b>${esc(s.nome_monumento)}</b><p style="color:var(--bl);font-size:13px;margin-top:4px">${esc(s.texto_narrativa)}</p><span class="mu">${esc(s.desafio||'')}</span></div>`).join('')||'<p class="pad mu">Salve uma história no diário para relê-la depois.</p>'}
+  <div class="sc"><h3>Conta e preferências</h3></div><div class="pad">${opt.map(([i,t,s])=>`<div class="li" onclick="toast('Em breve.')"><span class="med" style="width:26px;height:26px;font-size:12px;border-width:1px">${i}</span><div style="flex:1"><b style="font-size:13px">${t}</b><br><span class="mu" style="font-size:11px">${s}</span></div>›</div>`).join('')}</div>
+  <div class="pad"><p class="mu" style="margin:14px 0;font-size:11px">Sua localização é opcional. Você pode explorar sem compartilhar sua posição exata.</p><button class="btn g" onclick="out()">Sair</button><p class="mu" style="text-align:center;margin-top:12px;font-size:10px">RecGo · Uma cidade, muitas camadas.</p></div>`,'perfil');
+}
+
+run(async()=>{if(!tok)return auth('login');try{await mapv()}catch(e){if(tok)toast(e.message);else auth('login')}});
+</script>
 </body>
 </html>
