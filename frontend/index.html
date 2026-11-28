@@ -82,7 +82,7 @@ const dist=m=>pos&&m.latitude!=null?hav(pos[0],pos[1],+m.latitude,+m.longitude):
 const fmt=d=>d==null?'':d<1000?'~'+Math.round(d)+' m · em linha reta':'~'+(d/1000).toFixed(1)+' km';
 const art=(src,c='')=>`<div class="art ${c}"><img src="${src}" alt="" onerror="this.remove()"></div>`;
 const foot=()=>`<div class="foot"><img src="${IMG.rodape}" alt="" onerror="this.remove()"></div>`;
-const logo=()=>`<img src="${IMG.logo}" alt="OlindaGO" onerror="this.outerHTML='<b class=wm>Olinda<i>GO</i></b>'">`;
+const logo=()=>`<img src="${IMG.logo}" alt="RecGO" onerror="this.outerHTML='<b class=wm>Rec<i>GO</i></b>'">`;
 const hd=r=>`<div class="hd">${logo()}${r||''}</div>`;
 const xpBar=p=>`<div class="bar"><i style="width:${p%100}%"></i></div><span class="mu">Mais ${100-p%100} XP para o nível ${lvl(p)+1}</span>`;
 const lvCard=(p,t)=>`<div class="lv"><div class="med">★</div><div><b>Nível ${lvl(p)} · ${t||'Olhar atento'}</b>${xpBar(p)}</div><span class="mu">${p%100}/100</span></div>`;
